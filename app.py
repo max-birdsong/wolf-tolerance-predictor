@@ -115,7 +115,8 @@ with st.sidebar.expander("💼 About This Project", expanded=False):
     **Purpose:** Showcase production-level ML system design for wildlife management agencies
     
     **Key Demonstrations:**
-    - End-to-end ML pipeline (data → model → deployment)
+    - End-to-end ML pipeline (data collection → cleaning → modeling → deployment)
+    - Original survey data collection and processing
     - Agency-appropriate UI/UX design
     - Interpretable predictions with actionable insights
     - Professional documentation standards
@@ -134,7 +135,7 @@ with st.sidebar.expander("💼 About This Project", expanded=False):
     
     ---
     
-    **Disclaimer:** This is an independent portfolio project using publicly available research data. Not affiliated with any government agency.
+    **Disclaimer:** This is an independent portfolio project using original survey data collected and processed for this analysis. Not affiliated with any government agency.
     """)
 
 # Educational content in sidebar with professional framing
@@ -711,8 +712,8 @@ elif page == "📈 Model Documentation":
     with summary_col1:
         st.markdown("""
         This project demonstrates a **Logistic Regression model with ADASYN** (Adaptive Synthetic Sampling) 
-        for predicting wolf tolerance among Montana residents. The model was developed using publicly available 
-        survey data from 2,146 Montana residents collected in 2023, representing diverse stakeholder groups 
+        for predicting wolf tolerance among Montana residents. The model was developed using original survey data 
+        from 2,146 Montana residents collected in 2023, representing diverse stakeholder groups 
         including general public, landowners, wolf hunters, and deer hunters.
         
         **Key Findings:**
@@ -1059,7 +1060,7 @@ st.markdown("""
     <p style='font-size: 0.85rem; color: #7a8a77;'>
         <strong>Model Type:</strong> Logistic Regression + ADASYN | 
         <strong>Framework:</strong> Scikit-learn + Streamlit | 
-        <strong>Data Source:</strong> Montana Wolf Attitude Survey (2023, Public Dataset)
+        <strong>Data:</strong> Original survey data from Montana residents (2023, n=2,146)
     </p>
     <p style='font-size: 0.85rem; color: #1a472a; margin-top: 1rem;'>
         📓 <a href="https://github.com/max-birdsong/wolf-tolerance-predictor/blob/main/Wolf_Tolerance_Classifier.ipynb" target="_blank" style="color: #1a472a; font-weight: 600;">View Full Analysis on GitHub</a>
