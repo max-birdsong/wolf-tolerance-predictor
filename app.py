@@ -126,6 +126,14 @@ with st.sidebar.expander("💼 About This Project", expanded=False):
     - Targeted community outreach
     - Evidence-based policy planning
     
+    **View the Code:**
+    
+    📓 [Jupyter Notebook - Full Analysis](https://github.com/max-birdsong/wolf-tolerance-predictor/blob/main/Wolf_Tolerance_Classifier.ipynb)
+    
+    See the complete modeling process including EDA, feature engineering, model selection, and evaluation.
+    
+    ---
+    
     **Disclaimer:** This is an independent portfolio project using publicly available research data. Not affiliated with any government agency.
     """)
 
@@ -1052,6 +1060,9 @@ st.markdown("""
         <strong>Model Type:</strong> Logistic Regression + ADASYN | 
         <strong>Framework:</strong> Scikit-learn + Streamlit | 
         <strong>Data Source:</strong> Montana Wolf Attitude Survey (2023, Public Dataset)
+    </p>
+    <p style='font-size: 0.85rem; color: #1a472a; margin-top: 1rem;'>
+        📓 <a href="https://github.com/max-birdsong/wolf-tolerance-predictor/blob/main/Wolf_Tolerance_Classifier.ipynb" target="_blank" style="color: #1a472a; font-weight: 600;">View Full Analysis on GitHub</a>
     </p>
     <p style='font-size: 0.8rem; color: #999; margin-top: 1rem;'>
         <strong>Disclaimer:</strong> Independent portfolio project demonstrating ML applications for wildlife management.<br>
