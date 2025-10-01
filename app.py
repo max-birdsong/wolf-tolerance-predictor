@@ -135,7 +135,7 @@ with st.sidebar.expander("📚 About Wildlife Value Orientations"):
     
     **Research Foundation**
     
-    Peer-reviewed research demonstrates that wildlife value orientations are **2-16× stronger predictors** of tolerance than demographic factors alone, making them essential for targeted outreach and conflict mitigation strategies.
+    Peer-reviewed research demonstrates that wildlife value orientations are **stronger predictors** of tolerance than demographic factors alone, making them essential for targeted outreach and conflict mitigation strategies.
     """)
 
 with st.sidebar.expander("ℹ️ About This Tool"):
@@ -183,7 +183,7 @@ if page == "🎯 Individual Assessment":
         group = st.selectbox(
             "Stakeholder Group",
             ["GenPop", "Land", "Wolf", "Deer"],
-            help="**GenPop**: General public | **Land**: Landowner/Rancher | **Wolf**: Wolf advocate | **Deer**: Deer hunter"
+            help="**GenPop**: General public | **Land**: Landowner/Rancher | **Wolf**: Wolf hunter | **Deer**: Deer hunter"
         )
         
         st.markdown("---")
@@ -339,7 +339,7 @@ if page == "🎯 Individual Assessment":
                     st.markdown(factor)
                 
                 st.markdown("---")
-                st.caption("**Note:** Value orientations are 2-16× more influential than demographic factors in predicting tolerance.")
+                st.caption("**Note:** Value orientations are more influential than demographic factors in predicting tolerance.")
         
         else:
             # Placeholder when no prediction yet
@@ -692,7 +692,7 @@ elif page == "📈 Model Documentation":
         landowners, wolf advocates, and deer hunters.
         
         **Key Findings:**
-        - Wildlife value orientations are **2-16× more predictive** than demographic factors
+        - Wildlife value orientations are more predictive** than demographic factors
         - Utilitarian values show the strongest negative effect (coefficient: -0.84)
         - Model achieves 70% accuracy with balanced performance across tolerance classes
         - ADASYN balancing strategy optimizes for minority class detection (intolerant individuals)
@@ -878,7 +878,7 @@ elif page == "📈 Model Documentation":
     st.success("""
     **🎯 Strategic Implication for Montana FWP:**
     
-    Wildlife value orientations (mutualism and utilitarianism) are **2-16× more influential** than demographic 
+    Wildlife value orientations (mutualism and utilitarianism) are more influential than demographic 
     characteristics. This suggests that educational outreach emphasizing:
     1. Ecological benefits of wolves (appeals to mutualist values)
     2. Economic coexistence strategies (addresses utilitarian concerns)
@@ -1018,17 +1018,10 @@ st.markdown("---")
 st.markdown("""
 <div style='text-align: center; padding: 2rem 0; background-color: #f5f5f5; border-radius: 10px; margin-top: 3rem;'>
     <p style='font-size: 1.1rem; font-weight: 600; color: #1a472a; margin-bottom: 0.5rem;'>
-        Montana Fish, Wildlife & Parks
-    </p>
-    <p style='font-size: 0.95rem; color: #5a6c57; margin-bottom: 1rem;'>
-        Wildlife Management Division | Wolf-Human Coexistence Program
+        Montana FWP
     </p>
     <p style='font-size: 0.85rem; color: #7a8a77;'>
         <strong>Model Version:</strong> 1.0 | <strong>Last Updated:</strong> September 2025 | <strong>Training Data:</strong> Montana Wolf Attitude Survey (2023)
-    </p>
-    <p style='font-size: 0.8rem; color: #999; margin-top: 1rem;'>
-        For technical support or questions, contact the FWP Wildlife Management Division<br>
-        This tool is for internal FWP use and decision support purposes
     </p>
 </div>
 """, unsafe_allow_html=True)
