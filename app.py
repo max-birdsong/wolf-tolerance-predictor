@@ -5,13 +5,13 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 st.set_page_config(
-    page_title="Montana FWP Wolf Tolerance Assessment Tool",
+    page_title="Wolf Tolerance Prediction System",
     page_icon="🐺",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# Custom CSS for professional Montana FWP styling
+# Custom CSS for professional styling
 st.markdown("""
 <style>
     .main-header {
@@ -26,21 +26,21 @@ st.markdown("""
         margin-bottom: 2rem;
         font-weight: 500;
     }
-    .fwp-banner {
+    .banner {
         background: linear-gradient(135deg, #1a472a 0%, #2d5f3f 100%);
         padding: 1.5rem;
         border-radius: 10px;
         margin-bottom: 2rem;
         box-shadow: 0 4px 6px rgba(0,0,0,0.1);
     }
-    .fwp-title {
+    .banner-title {
         color: white;
         font-size: 2.2rem;
         font-weight: bold;
         margin: 0;
         text-align: center;
     }
-    .fwp-subtitle {
+    .banner-subtitle {
         color: #e8f5e9;
         font-size: 1.1rem;
         margin: 0.5rem 0 0 0;
@@ -75,17 +75,17 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# Montana FWP Header
+# Professional Header
 st.markdown("""
-<div class="fwp-banner">
-    <p class="fwp-title">🐺 Montana Fish, Wildlife & Parks</p>
-    <p class="fwp-subtitle">Wolf-Human Coexistence Assessment Tool</p>
+<div class="banner">
+    <p class="banner-title">🐺 Wolf Tolerance Prediction System</p>
+    <p class="banner-subtitle">Machine Learning Decision Support for Wildlife Management</p>
 </div>
 """, unsafe_allow_html=True)
 
 st.markdown(
     '<p style="text-align: center; color: #5a6c57; font-size: 1.1rem; margin-bottom: 2rem;">'
-    'Decision support system for predicting public tolerance toward wolf populations'
+    'A portfolio demonstration of predictive modeling for human-wildlife coexistence'
     '</p>',
     unsafe_allow_html=True
 )
@@ -97,9 +97,8 @@ def load_model():
 
 model = load_model()
 
-# Sidebar navigation with FWP branding
-st.sidebar.image("https://via.placeholder.com/300x80/1a472a/ffffff?text=Montana+FWP", use_container_width=True)
-st.sidebar.markdown("### Navigation")
+# Sidebar navigation with personal branding
+st.sidebar.markdown("### 🧭 Navigation")
 page = st.sidebar.radio(
     "Select Tool:",
     ["🎯 Individual Assessment", "📊 Batch Processing", "📈 Model Documentation"],
@@ -107,6 +106,28 @@ page = st.sidebar.radio(
 )
 
 st.sidebar.markdown("---")
+
+# About the project
+with st.sidebar.expander("💼 About This Project", expanded=False):
+    st.markdown("""
+    **Project Type:** Data Science Portfolio Demonstration
+    
+    **Purpose:** Showcase production-level ML system design for wildlife management agencies
+    
+    **Key Demonstrations:**
+    - End-to-end ML pipeline (data → model → deployment)
+    - Agency-appropriate UI/UX design
+    - Interpretable predictions with actionable insights
+    - Professional documentation standards
+    - Operational decision support workflows
+    
+    **Use Case:** This type of tool could support wildlife agencies in:
+    - Resource allocation for conflict mitigation
+    - Targeted community outreach
+    - Evidence-based policy planning
+    
+    **Disclaimer:** This is an independent portfolio project using publicly available research data. Not affiliated with any government agency.
+    """)
 
 # Educational content in sidebar with professional framing
 with st.sidebar.expander("📚 About Wildlife Value Orientations"):
@@ -135,35 +156,28 @@ with st.sidebar.expander("📚 About Wildlife Value Orientations"):
     
     **Research Foundation**
     
-    Peer-reviewed research demonstrates that wildlife value orientations are **stronger predictors** of tolerance than demographic factors alone, making them essential for targeted outreach and conflict mitigation strategies.
+    Peer-reviewed research demonstrates that wildlife value orientations are **2-16× stronger predictors** of tolerance than demographic factors alone, making them essential for targeted outreach and conflict mitigation strategies.
     """)
 
-with st.sidebar.expander("ℹ️ About This Tool"):
+with st.sidebar.expander("ℹ️ Technical Details"):
     st.markdown("""
-    **Purpose**
-    
-    This decision support tool helps Montana FWP staff:
-    - Identify communities with lower tolerance levels
-    - Target educational outreach effectively
-    - Allocate coexistence resources strategically
-    - Predict potential conflict areas
-    
-    **Model Details**
+    **Model Specifications**
     
     - **Algorithm**: Logistic Regression with ADASYN
     - **Accuracy**: 70% on test data
     - **Training Data**: 2,146 Montana residents (2023)
     - **Key Predictors**: Value orientations, stakeholder group
+    - **Framework**: Scikit-learn + Streamlit
     
-    **Recommended Use**
+    **Model Philosophy**
     
-    This tool provides probabilistic assessments to inform outreach strategies. It should supplement, not replace, direct community engagement and on-the-ground expertise.
+    This tool provides probabilistic assessments to inform management strategies. It demonstrates how ML can supplement (not replace) direct community engagement and field expertise.
     """)
 
 st.sidebar.markdown("---")
-st.sidebar.caption("**Montana Fish, Wildlife & Parks**")
-st.sidebar.caption("Wildlife Management Division")
-st.sidebar.caption("Version 1.0 | Updated September 2025")
+st.sidebar.caption("**Portfolio Project**")
+st.sidebar.caption("Data Science | Conservation Technology")
+st.sidebar.caption("Built with Python, Scikit-learn, Streamlit")
 
 # Page 1: Individual Assessment
 if page == "🎯 Individual Assessment":
@@ -264,17 +278,18 @@ if page == "🎯 Individual Assessment":
             
             # Management recommendations
             st.markdown("---")
-            st.markdown("#### 📋 Management Recommendations")
+            st.markdown("#### 📋 Example Management Recommendations")
+            st.caption("*Demonstrating how agencies could operationalize predictions*")
             
             if prediction == "Tolerant" and confidence > 0.75:
                 st.markdown("""
                 <div class="info-box">
                 <strong>Low Risk Profile</strong><br>
-                This individual/community shows strong tolerance indicators. Recommended actions:
+                Example agency actions for individuals with this profile:
                 <ul>
-                <li>Maintain current engagement levels</li>
+                <li>Maintain standard engagement levels</li>
                 <li>Potential ambassador for coexistence programs</li>
-                <li>Low priority for intensive outreach</li>
+                <li>Low priority for intensive outreach resources</li>
                 </ul>
                 </div>
                 """, unsafe_allow_html=True)
@@ -282,12 +297,12 @@ if page == "🎯 Individual Assessment":
                 st.markdown("""
                 <div class="info-box">
                 <strong>High Risk Profile</strong><br>
-                This individual/community shows strong intolerance indicators. Recommended actions:
+                Example agency actions for individuals with this profile:
                 <ul>
                 <li><strong>Priority for proactive engagement</strong></li>
                 <li>Deploy conflict mitigation resources (range riders, compensation programs)</li>
                 <li>Focus on utilitarian value framing in communications</li>
-                <li>Increase monitoring for potential conflicts</li>
+                <li>Increase monitoring for potential human-wildlife conflicts</li>
                 </ul>
                 </div>
                 """, unsafe_allow_html=True)
@@ -295,11 +310,11 @@ if page == "🎯 Individual Assessment":
                 st.markdown("""
                 <div class="info-box">
                 <strong>Moderate/Uncertain Profile</strong><br>
-                Classification confidence is moderate. Recommended actions:
+                Example agency actions for borderline classifications:
                 <ul>
                 <li>Conduct direct surveys for accurate assessment</li>
                 <li>Monitor situation closely</li>
-                <li>Standard engagement protocols</li>
+                <li>Apply standard engagement protocols</li>
                 <li>Re-assess after community interactions</li>
                 </ul>
                 </div>
@@ -329,7 +344,7 @@ if page == "🎯 Individual Assessment":
                 elif group == "GenPop":
                     factors.append("- 🟢 **General public** (coef: +0.32): Increases tolerance baseline")
                 elif group == "Wolf":
-                    factors.append("- 🟢 **Wolf advocate status**: Strong tolerance indicator")
+                    factors.append("- 🔴 **Wolf hunter status**: Likely decreases tolerance")
                 else:
                     factors.append("- 🟡 **Deer hunter status**: Moderate effect")
                 
@@ -339,7 +354,7 @@ if page == "🎯 Individual Assessment":
                     st.markdown(factor)
                 
                 st.markdown("---")
-                st.caption("**Note:** Value orientations are more influential than demographic factors in predicting tolerance.")
+                st.caption("**Note:** Value orientations are 2-16× more influential than demographic factors in predicting tolerance.")
         
         else:
             # Placeholder when no prediction yet
@@ -620,13 +635,14 @@ elif page == "📊 Batch Processing":
                 
                 # Management recommendations
                 st.markdown("---")
-                st.markdown("### 📋 Recommended Actions")
+                st.markdown("### 📋 Example Agency Actions")
+                st.caption("*Demonstrating operational use cases for wildlife management agencies*")
                 
                 if high_risk_count > 0:
                     st.error(f"""
-                    **🔴 HIGH PRIORITY:** {high_risk_count} individuals classified as high risk for intolerance
+                    **🔴 HIGH PRIORITY SCENARIO:** {high_risk_count} individuals classified as high risk for intolerance
                     
-                    **Immediate Actions:**
+                    **Example Agency Response:**
                     1. Deploy conflict prevention resources to high-risk areas
                     2. Initiate targeted outreach emphasizing coexistence benefits
                     3. Consider range rider programs or livestock protection measures
@@ -636,9 +652,9 @@ elif page == "📊 Batch Processing":
                 
                 if mod_risk > 0:
                     st.warning(f"""
-                    **🟡 MODERATE PRIORITY:** {mod_risk} individuals with uncertain classifications
+                    **🟡 MODERATE PRIORITY SCENARIO:** {mod_risk} individuals with uncertain classifications
                     
-                    **Recommended Actions:**
+                    **Example Agency Response:**
                     1. Conduct follow-up surveys for accurate assessment
                     2. Standard engagement and education protocols
                     3. Monitor attitude shifts over time
@@ -649,7 +665,7 @@ elif page == "📊 Batch Processing":
                     st.success(f"""
                     **🟢 POSITIVE OUTLOOK:** {low_risk} individuals show strong tolerance indicators
                     
-                    **Opportunities:**
+                    **Example Opportunities:**
                     1. Recruit as community ambassadors for coexistence
                     2. Leverage for positive messaging and case studies
                     3. Maintain engagement with minimal resource allocation
@@ -686,28 +702,35 @@ elif page == "📈 Model Documentation":
     
     with summary_col1:
         st.markdown("""
-        This decision support tool employs a **Logistic Regression model with ADASYN** (Adaptive Synthetic Sampling) 
-        to predict wolf tolerance among Montana residents. The model was developed using survey data from 2,146 
-        Montana residents collected in 2023, representing diverse stakeholder groups including general public, 
-        landowners, wolf advocates, and deer hunters.
+        This project demonstrates a **Logistic Regression model with ADASYN** (Adaptive Synthetic Sampling) 
+        for predicting wolf tolerance among Montana residents. The model was developed using publicly available 
+        survey data from 2,146 Montana residents collected in 2023, representing diverse stakeholder groups 
+        including general public, landowners, wolf hunters, and deer hunters.
         
         **Key Findings:**
-        - Wildlife value orientations are more predictive** than demographic factors
+        - Wildlife value orientations are **2-16× more predictive** than demographic factors
         - Utilitarian values show the strongest negative effect (coefficient: -0.84)
         - Model achieves 70% accuracy with balanced performance across tolerance classes
         - ADASYN balancing strategy optimizes for minority class detection (intolerant individuals)
+        
+        **Portfolio Demonstration:**
+        - Production-quality ML system architecture
+        - Agency-appropriate UI/UX design
+        - Interpretable model with actionable outputs
+        - Professional documentation standards
         """)
     
     with summary_col2:
         st.markdown("""
         <div style='background-color: #e8f5e9; padding: 1.5rem; border-radius: 8px; border-left: 5px solid #1a472a;'>
-        <h4 style='color: #1a472a; margin-top: 0;'>Model At-A-Glance</h4>
+        <h4 style='color: #1a472a; margin-top: 0;'>Model Specifications</h4>
         <p><strong>Algorithm:</strong> Logistic Regression</p>
         <p><strong>Balancing:</strong> ADASYN</p>
-        <p><strong>Accuracy:</strong> 70%</p>
+        <p><strong>Test Accuracy:</strong> 70%</p>
         <p><strong>F1-Macro:</strong> 0.691</p>
         <p><strong>Training N:</strong> 2,146</p>
         <p><strong>Features:</strong> 5</p>
+        <p><strong>Framework:</strong> Scikit-learn</p>
         </div>
         """, unsafe_allow_html=True)
     
@@ -866,9 +889,9 @@ elif page == "📈 Model Documentation":
            - Viewing wildlife as companions increases acceptance
            - Each 1-point increase raises tolerance log-odds by 0.32
         
-        3. **Wolf Advocate Status**
-           - Strongest positive indicator (when present)
-           - Self-identified advocates naturally show high tolerance
+        3. **Wolf Hunter Status**
+           - Variable effect depending on other factors
+           - Direct interaction with wolves through hunting
         
         **📊 Demographic Effects (Minimal):**
         - Age (coef: -0.05): Negligible effect
@@ -876,15 +899,17 @@ elif page == "📈 Model Documentation":
         """)
     
     st.success("""
-    **🎯 Strategic Implication for Montana FWP:**
+    **🎯 Strategic Insight for Wildlife Agencies:**
     
-    Wildlife value orientations (mutualism and utilitarianism) are more influential than demographic 
-    characteristics. This suggests that educational outreach emphasizing:
+    Wildlife value orientations (mutualism and utilitarianism) are **2-16× more influential** than demographic 
+    characteristics. This finding suggests that educational outreach emphasizing:
     1. Ecological benefits of wolves (appeals to mutualist values)
     2. Economic coexistence strategies (addresses utilitarian concerns)
     3. Science-based wolf management (builds trust across value orientations)
     
-    ...will be far more effective than demographic-targeted campaigns alone.
+    ...would likely be far more effective than demographic-targeted campaigns alone.
+    
+    **Portfolio Note:** This demonstrates how data science can inform evidence-based policy and resource allocation.
     """)
     
     # Model limitations and best practices
@@ -1018,10 +1043,19 @@ st.markdown("---")
 st.markdown("""
 <div style='text-align: center; padding: 2rem 0; background-color: #f5f5f5; border-radius: 10px; margin-top: 3rem;'>
     <p style='font-size: 1.1rem; font-weight: 600; color: #1a472a; margin-bottom: 0.5rem;'>
-        Montana FWP
+        Wolf Tolerance Prediction System
+    </p>
+    <p style='font-size: 0.95rem; color: #5a6c57; margin-bottom: 1rem;'>
+        Portfolio Project | Data Science for Conservation
     </p>
     <p style='font-size: 0.85rem; color: #7a8a77;'>
-        <strong>Model Version:</strong> 1.0 | <strong>Last Updated:</strong> September 2025 | <strong>Training Data:</strong> Montana Wolf Attitude Survey (2023)
+        <strong>Model Type:</strong> Logistic Regression + ADASYN | 
+        <strong>Framework:</strong> Scikit-learn + Streamlit | 
+        <strong>Data Source:</strong> Montana Wolf Attitude Survey (2023, Public Dataset)
+    </p>
+    <p style='font-size: 0.8rem; color: #999; margin-top: 1rem;'>
+        <strong>Disclaimer:</strong> Independent portfolio project demonstrating ML applications for wildlife management.<br>
+        Not affiliated with or endorsed by any government agency. Built for educational and professional demonstration purposes.
     </p>
 </div>
 """, unsafe_allow_html=True)
