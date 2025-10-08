@@ -1,1073 +1,939 @@
 import streamlit as st
 import pandas as pd
-import joblib
-import matplotlib.pyplot as plt
 import numpy as np
+import plotly.express as px
+import plotly.graph_objects as go
+from sklearn.cluster import KMeans
+from sklearn.preprocessing import StandardScaler
+from sklearn.metrics import silhouette_score, davies_bouldin_score, calinski_harabasz_score
 
-st.set_page_config(
-    page_title="Wolf Tolerance Prediction System",
-    page_icon="🐺",
-    layout="wide",
-    initial_sidebar_state="expanded"
-)
+# Page configuration
+st.set_page_config(page_title="Wildlife Stakeholder Segmentation", layout="wide", page_icon="🐺")
 
-# Custom CSS for professional styling
+# Title and introduction
+st.title("🐺 Wildlife Stakeholder Segmentation Dashboard")
 st.markdown("""
-<style>
-    .main-header {
-        font-size: 2.8rem;
-        color: #1a472a;
-        font-weight: bold;
-        margin-bottom: 0.5rem;
-    }
-    .sub-header {
-        font-size: 1.3rem;
-        color: #5a6c57;
-        margin-bottom: 2rem;
-        font-weight: 500;
-    }
-    .banner {
-        background: linear-gradient(135deg, #1a472a 0%, #2d5f3f 100%);
-        padding: 1.5rem;
-        border-radius: 10px;
-        margin-bottom: 2rem;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-    }
-    .banner-title {
-        color: white;
-        font-size: 2.2rem;
-        font-weight: bold;
-        margin: 0;
-        text-align: center;
-    }
-    .banner-subtitle {
-        color: #e8f5e9;
-        font-size: 1.1rem;
-        margin: 0.5rem 0 0 0;
-        text-align: center;
-    }
-    .metric-card {
-        background: #f8f9fa;
-        padding: 1rem;
-        border-radius: 8px;
-        border-left: 4px solid #1a472a;
-    }
-    .stButton>button {
-        background-color: #1a472a;
-        color: white;
-        font-weight: 600;
-        border-radius: 8px;
-        padding: 0.6rem 2rem;
-        border: none;
-        transition: all 0.3s;
-    }
-    .stButton>button:hover {
-        background-color: #2d5f3f;
-        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-    }
-    .info-box {
-        background-color: #e8f5e9;
-        border-left: 5px solid #1a472a;
-        padding: 1rem;
-        border-radius: 5px;
-        margin: 1rem 0;
-    }
-</style>
-""", unsafe_allow_html=True)
+**Decision Support Tool for Wolf Management Strategies**  
+This dashboard identifies distinct stakeholder segments based on wildlife value orientations and tolerance levels,
+enabling targeted engagement and communication strategies.
+""")
 
-# Professional Header
-st.markdown("""
-<div class="banner">
-    <p class="banner-title">🐺 Wolf Tolerance Prediction System</p>
-    <p class="banner-subtitle">Machine Learning Decision Support for Wildlife Management</p>
-</div>
-""", unsafe_allow_html=True)
+# Sidebar for navigation
+st.sidebar.title("Navigation")
+page = st.sidebar.radio("Go to", [
+    "📊 Overview",
+    "🔍 Cluster Explorer",
+    "👥 Segment Profiles",
+    "🤝 Experience & Trust",
+    "📈 Model Performance",
+    "💡 Strategic Insights"
+])
 
-st.markdown(
-    '<p style="text-align: center; color: #5a6c57; font-size: 1.1rem; margin-bottom: 2rem;">'
-    'A portfolio demonstration of predictive modeling for human-wildlife coexistence'
-    '</p>',
-    unsafe_allow_html=True
-)
 
-# Load model
-@st.cache_resource
-def load_model():
-    return joblib.load('wolf_tolerance_model.pkl')
+# Load data function
+@st.cache_data
+def load_data():
+        df = pd.read_csv('FINAL Quantitative Respondent Data Combined Long_v2.csv')  # Match your actual filename
+        df['tolerance'] = (df['Q3'] > 4).astype(int)
+        return df
 
-model = load_model()
-
-# Sidebar navigation with personal branding
-st.sidebar.markdown("### 🧭 Navigation")
-page = st.sidebar.radio(
-    "Select Tool:",
-    ["🎯 Individual Assessment", "📊 Batch Processing", "📈 Model Documentation"],
-    label_visibility="collapsed"
-)
-
-st.sidebar.markdown("---")
-
-# About the project
-with st.sidebar.expander("💼 About This Project", expanded=False):
-    st.markdown("""
-    **Project Type:** Data Science Portfolio Demonstration
-    
-    **Purpose:** Showcase production-level ML system design for wildlife management agencies
-    
-    **Key Demonstrations:**
-    - End-to-end ML pipeline (data collection → cleaning → modeling → deployment)
-    - Original survey data collection and processing
-    - Agency-appropriate UI/UX design
-    - Interpretable predictions with actionable insights
-    - Professional documentation standards
-    - Operational decision support workflows
-    
-    **Use Case:** This type of tool could support wildlife agencies in:
-    - Resource allocation for conflict mitigation
-    - Targeted community outreach
-    - Evidence-based policy planning
-    
-    **View the Code:**
-    
-    📓 [Jupyter Notebook - Full Analysis](https://github.com/max-birdsong/wolf-tolerance-predictor/blob/main/Wolf_Tolerance_Classifier.ipynb)
-    
-    See the complete modeling process including EDA, feature engineering, model selection, and evaluation.
-    
-    ---
-    
-    **Disclaimer:** This is an independent portfolio project using original survey data collected and processed for this analysis. Not affiliated with any government agency.
-    """)
-
-# Educational content in sidebar with professional framing
-with st.sidebar.expander("📚 About Wildlife Value Orientations"):
-    st.markdown("""
-    **Mutualism Values (1-7)**
-    
-    Viewing wildlife as companions deserving of care and protection. Individuals with high mutualism values tend to:
-    - Support wildlife conservation
-    - Emphasize animal welfare
-    - View wildlife as having intrinsic rights
-    
-    *Example: "Wolves have a right to exist in Montana"*
-    
-    ---
-    
-    **Utilitarian Values (1-7)**
-    
-    Viewing wildlife primarily as resources for human benefit. Individuals with high utilitarian values tend to:
-    - Prioritize human needs over wildlife
-    - Support management focused on economic benefits
-    - View wildlife through a cost-benefit lens
-    
-    *Example: "Wildlife management should prioritize human safety and economic interests"*
-    
-    ---
-    
-    **Research Foundation**
-    
-    Peer-reviewed research demonstrates that wildlife value orientations are **2-16× stronger predictors** of tolerance than demographic factors alone, making them essential for targeted outreach and conflict mitigation strategies.
-    """)
-
-with st.sidebar.expander("ℹ️ Technical Details"):
-    st.markdown("""
-    **Model Specifications**
-    
-    - **Algorithm**: Logistic Regression with ADASYN
-    - **Accuracy**: 70% on test data
-    - **Training Data**: 2,146 Montana residents (2023)
-    - **Key Predictors**: Value orientations, stakeholder group
-    - **Framework**: Scikit-learn + Streamlit
-    
-    **Model Philosophy**
-    
-    This tool provides probabilistic assessments to inform management strategies. It demonstrates how ML can supplement (not replace) direct community engagement and field expertise.
-    """)
-
-st.sidebar.markdown("---")
-st.sidebar.caption("**Portfolio Project**")
-st.sidebar.caption("Data Science | Conservation Technology")
-st.sidebar.caption("Built with Python, Scikit-learn, Streamlit")
-
-# Page 1: Individual Assessment
-if page == "🎯 Individual Assessment":
-    st.markdown("### Individual Tolerance Assessment")
-    st.markdown("Evaluate wolf tolerance for a specific individual or community member")
-    
-    col1, col2 = st.columns([1, 2])
-    
-    with col1:
-        st.markdown("#### Demographic Information")
-        age = st.slider("Age", 18, 90, 45, help="Respondent age in years")
-        gender = st.selectbox(
-            "Gender",
-            options=[1, 2],
-            format_func=lambda x: "Female" if x == 1 else "Male"
-        )
-        group = st.selectbox(
-            "Stakeholder Group",
-            ["GenPop", "Land", "Wolf", "Deer"],
-            help="**GenPop**: General public | **Land**: Landowner/Rancher | **Wolf**: Wolf hunter | **Deer**: Deer hunter"
-        )
-        
-        st.markdown("---")
-        st.markdown("#### Wildlife Value Orientations")
-        st.caption("Based on validated survey scales (Teel & Manfredo, 2010)")
-        
-        mutualism = st.slider(
-            "Mutualism Score",
-            1.0, 7.0, 4.0, 0.1,
-            help="How strongly does this person view wildlife as companions? (1=Low, 7=High)"
-        )
-        utilitarianism = st.slider(
-            "Utilitarianism Score",
-            1.0, 7.0, 4.0, 0.1,
-            help="How strongly does this person view wildlife as resources? (1=Low, 7=High)"
-        )
-        
-        st.markdown("---")
-        predict_button = st.button("🔍 Run Assessment", type="primary", use_container_width=True)
-    
-    with col2:
-        if predict_button:
-            input_data = pd.DataFrame({
-                'Q36': [age],
-                'Q37': [gender],
-                'group': [group],
-                'MUT_WVO': [mutualism],
-                'UT_WVO': [utilitarianism]
-            })
-            
-            prediction = model.predict(input_data)[0]
-            proba = model.predict_proba(input_data)[0]
-            confidence = max(proba)
-            
-            # Professional results display
-            st.markdown("### Assessment Results")
-            
-            # Primary result with color-coded styling
-            if prediction == "Tolerant":
-                st.success("#### ✅ TOLERANT CLASSIFICATION")
-                st.markdown(f"**Probability of Tolerance:** {proba[1]:.1%}")
-            else:
-                st.error("#### ⚠️ NOT TOLERANT CLASSIFICATION")
-                st.markdown(f"**Probability of Intolerance:** {proba[0]:.1%}")
-            
-            # Confidence metrics
-            metric_col1, metric_col2, metric_col3 = st.columns(3)
-            with metric_col1:
-                st.metric("Classification", prediction)
-            with metric_col2:
-                st.metric("Model Confidence", f"{confidence:.1%}")
-            with metric_col3:
-                certainty_level = "High" if confidence > 0.75 else "Moderate" if confidence > 0.65 else "Low"
-                st.metric("Certainty Level", certainty_level)
-            
-            st.markdown("---")
-            
-            # Probability visualization
-            st.markdown("#### Classification Probabilities")
-            prob_df = pd.DataFrame({
-                'Classification': ['Not Tolerant', 'Tolerant'],
-                'Probability': [proba[0], proba[1]]
-            })
-            
-            fig, ax = plt.subplots(figsize=(10, 3))
-            colors = ['#c62828', '#2e7d32']
-            bars = ax.barh(prob_df['Classification'], prob_df['Probability'], color=colors, height=0.5)
-            ax.set_xlim(0, 1)
-            ax.set_xlabel('Probability', fontweight='bold')
-            ax.grid(axis='x', alpha=0.3)
-            
-            # Add percentage labels
-            for i, (bar, prob) in enumerate(zip(bars, prob_df['Probability'])):
-                ax.text(prob + 0.02, i, f'{prob:.1%}', va='center', fontweight='bold')
-            
-            st.pyplot(fig)
-            plt.close()
-            
-            # Management recommendations
-            st.markdown("---")
-            st.markdown("#### 📋 Example Management Recommendations")
-            st.caption("*Demonstrating how agencies could operationalize predictions*")
-            
-            if prediction == "Tolerant" and confidence > 0.75:
-                st.markdown("""
-                <div class="info-box">
-                <strong>Low Risk Profile</strong><br>
-                Example agency actions for individuals with this profile:
-                <ul>
-                <li>Maintain standard engagement levels</li>
-                <li>Potential ambassador for coexistence programs</li>
-                <li>Low priority for intensive outreach resources</li>
-                </ul>
-                </div>
-                """, unsafe_allow_html=True)
-            elif prediction == "Not Tolerant" and confidence > 0.75:
-                st.markdown("""
-                <div class="info-box">
-                <strong>High Risk Profile</strong><br>
-                Example agency actions for individuals with this profile:
-                <ul>
-                <li><strong>Priority for proactive engagement</strong></li>
-                <li>Deploy conflict mitigation resources (range riders, compensation programs)</li>
-                <li>Focus on utilitarian value framing in communications</li>
-                <li>Increase monitoring for potential human-wildlife conflicts</li>
-                </ul>
-                </div>
-                """, unsafe_allow_html=True)
-            else:
-                st.markdown("""
-                <div class="info-box">
-                <strong>Moderate/Uncertain Profile</strong><br>
-                Example agency actions for borderline classifications:
-                <ul>
-                <li>Conduct direct surveys for accurate assessment</li>
-                <li>Monitor situation closely</li>
-                <li>Apply standard engagement protocols</li>
-                <li>Re-assess after community interactions</li>
-                </ul>
-                </div>
-                """, unsafe_allow_html=True)
-            
-            # Detailed factor analysis
-            with st.expander("🔬 Factor Analysis: What Drives This Assessment?"):
-                st.markdown("**Influential Factors** (based on logistic regression coefficients):")
-                
-                factors = []
-                if utilitarianism > 5:
-                    factors.append("- 🔴 **High utilitarian values** (coef: -0.84): Strong predictor of intolerance")
-                elif utilitarianism < 3:
-                    factors.append("- 🟢 **Low utilitarian values** (coef: -0.84): Increases tolerance likelihood")
-                else:
-                    factors.append("- 🟡 **Moderate utilitarian values**: Neutral effect")
-                
-                if mutualism > 5:
-                    factors.append("- 🟢 **High mutualist values** (coef: +0.32): Increases tolerance")
-                elif mutualism < 3:
-                    factors.append("- 🔴 **Low mutualist values** (coef: +0.32): Decreases tolerance")
-                else:
-                    factors.append("- 🟡 **Moderate mutualist values**: Neutral effect")
-                
-                if group == "Land":
-                    factors.append("- 🔴 **Landowner status** (coef: -0.35): Decreases tolerance significantly")
-                elif group == "GenPop":
-                    factors.append("- 🟢 **General public** (coef: +0.32): Increases tolerance baseline")
-                elif group == "Wolf":
-                    factors.append("- 🔴 **Wolf hunter status**: Likely decreases tolerance")
-                else:
-                    factors.append("- 🟡 **Deer hunter status**: Moderate effect")
-                
-                factors.append(f"- 🟡 **Demographics** (age: {age}, gender: {'Female' if gender==1 else 'Male'}): Minimal impact (age coef: -0.05, gender coef: +0.09)")
-                
-                for factor in factors:
-                    st.markdown(factor)
-                
-                st.markdown("---")
-                st.caption("**Note:** Value orientations are 2-16× more influential than demographic factors in predicting tolerance.")
-        
-        else:
-            # Placeholder when no prediction yet
-            st.info("👈 Enter individual characteristics and click **Run Assessment** to generate predictions and recommendations.")
-            st.markdown("---")
-            st.markdown("#### Assessment Output Includes:")
-            st.markdown("""
-            - **Tolerance classification** with probability scores
-            - **Confidence metrics** for decision reliability
-            - **Management recommendations** tailored to risk level
-            - **Factor analysis** explaining the prediction
-            - **Actionable next steps** for FWP staff
-            """)
-
-# Page 2: Batch Processing
-elif page == "📊 Batch Processing":
-    st.markdown("### Batch Assessment Tool")
-    st.markdown("Process multiple individuals simultaneously for community-level or regional analysis")
-    
-    # Enhanced instructions
-    col1, col2 = st.columns([2, 1])
-    
-    with col1:
-        st.markdown("#### 📁 Upload Data File")
-        st.markdown("Upload a CSV file containing assessment data for multiple individuals.")
-    
-    with col2:
-        st.markdown("#### 📄 Template")
-        st.markdown("Download our formatted template to ensure compatibility.")
-    
-    # Sample CSV template with better presentation
-    with st.expander("📋 CSV Format Requirements & Template", expanded=True):
-        st.markdown("""
-        **Required Columns:**
-        
-        | Column | Description | Valid Values |
-        |--------|-------------|--------------|
-        | `Q36` | Age | 18-90 |
-        | `Q37` | Gender | 1 (Female), 2 (Male) |
-        | `group` | Stakeholder Group | GenPop, Land, Wolf, Deer |
-        | `MUT_WVO` | Mutualism Score | 1.0-7.0 |
-        | `UT_WVO` | Utilitarianism Score | 1.0-7.0 |
-        
-        **Optional Columns:**
-        - Any identifier columns (e.g., `ID`, `Name`, `Location`) will be preserved in output
-        """)
-        
-        st.markdown("---")
-        st.markdown("**Sample Data Template:**")
-        
-        # Enhanced sample data with identifiers
-        sample_df = pd.DataFrame({
-            'ID': ['R001', 'R002', 'R003', 'R004'],
-            'Location': ['Missoula', 'Bozeman', 'Great Falls', 'Kalispell'],
-            'Q36': [45, 32, 67, 51],
-            'Q37': [1, 2, 1, 2],
-            'group': ['GenPop', 'Land', 'Wolf', 'Deer'],
-            'MUT_WVO': [5.2, 3.1, 6.8, 4.5],
-            'UT_WVO': [3.5, 6.2, 2.1, 5.0]
-        })
-        st.dataframe(sample_df, use_container_width=True)
-        
-        csv_sample = sample_df.to_csv(index=False)
-        st.download_button(
-            "📥 Download Template CSV",
-            csv_sample,
-            "FWP_Wolf_Assessment_Template.csv",
-            "text/csv",
-            use_container_width=True
-        )
-    
-    st.markdown("---")
-    
-    uploaded_file = st.file_uploader(
-        "Choose your data file",
-        type="csv",
-        help="Upload a CSV file with the required columns listed above"
-    )
-    
-    if uploaded_file is not None:
-        try:
-            df = pd.read_csv(uploaded_file)
-            
-            required_cols = ['Q36', 'Q37', 'group', 'MUT_WVO', 'UT_WVO']
-            
-            if all(col in df.columns for col in required_cols):
-                
-                with st.spinner("🔄 Processing assessments... This may take a moment for large datasets."):
-                    predictions = model.predict(df[required_cols])
-                    probas = model.predict_proba(df[required_cols])
-                    
-                    df['Predicted_Tolerance'] = predictions
-                    df['Tolerant_Probability'] = probas[:, 1]
-                    df['Confidence'] = probas.max(axis=1)
-                    df['Risk_Level'] = df.apply(
-                        lambda x: 'High Risk' if x['Predicted_Tolerance'] == 'Not Tolerant' and x['Confidence'] > 0.75
-                        else 'Low Risk' if x['Predicted_Tolerance'] == 'Tolerant' and x['Confidence'] > 0.75
-                        else 'Moderate Risk',
-                        axis=1
-                    )
-                
-                st.success(f"✅ Successfully processed {len(df)} assessments!")
-                
-                st.markdown("---")
-                st.markdown("### 📊 Assessment Summary")
-                
-                # Enhanced summary statistics
-                col1, col2, col3, col4 = st.columns(4)
-                tolerant_pct = (predictions == 'Tolerant').mean()
-                avg_confidence = probas.max(axis=1).mean()
-                high_risk_count = (df['Risk_Level'] == 'High Risk').sum()
-                
-                col1.metric("Total Assessed", f"{len(df):,}")
-                col2.metric("Predicted Tolerant", f"{tolerant_pct:.1%}", 
-                           delta=f"{int(tolerant_pct * len(df))} individuals")
-                col3.metric("High Risk Cases", f"{high_risk_count}", 
-                           delta="Requires attention" if high_risk_count > 0 else "None identified")
-                col4.metric("Avg Confidence", f"{avg_confidence:.1%}")
-                
-                # Risk breakdown
-                st.markdown("---")
-                st.markdown("### 🎯 Risk Distribution")
-                risk_counts = df['Risk_Level'].value_counts()
-                
-                risk_col1, risk_col2, risk_col3 = st.columns(3)
-                with risk_col1:
-                    high_risk = risk_counts.get('High Risk', 0)
-                    st.markdown(f"""
-                    <div style='background-color: #ffebee; padding: 1rem; border-radius: 8px; border-left: 4px solid #c62828;'>
-                    <h4 style='color: #c62828; margin: 0;'>🔴 High Risk</h4>
-                    <h2 style='margin: 0.5rem 0;'>{high_risk}</h2>
-                    <p style='margin: 0; color: #666;'>Priority for outreach</p>
-                    </div>
-                    """, unsafe_allow_html=True)
-                
-                with risk_col2:
-                    mod_risk = risk_counts.get('Moderate Risk', 0)
-                    st.markdown(f"""
-                    <div style='background-color: #fff8e1; padding: 1rem; border-radius: 8px; border-left: 4px solid #f57c00;'>
-                    <h4 style='color: #f57c00; margin: 0;'>🟡 Moderate Risk</h4>
-                    <h2 style='margin: 0.5rem 0;'>{mod_risk}</h2>
-                    <p style='margin: 0; color: #666;'>Monitor situation</p>
-                    </div>
-                    """, unsafe_allow_html=True)
-                
-                with risk_col3:
-                    low_risk = risk_counts.get('Low Risk', 0)
-                    st.markdown(f"""
-                    <div style='background-color: #e8f5e9; padding: 1rem; border-radius: 8px; border-left: 4px solid #2e7d32;'>
-                    <h4 style='color: #2e7d32; margin: 0;'>🟢 Low Risk</h4>
-                    <h2 style='margin: 0.5rem 0;'>{low_risk}</h2>
-                    <p style='margin: 0; color: #666;'>Standard protocols</p>
-                    </div>
-                    """, unsafe_allow_html=True)
-                
-                # Display results table
-                st.markdown("---")
-                st.markdown("### 📋 Detailed Results")
-                
-                # Add filtering options
-                filter_col1, filter_col2 = st.columns(2)
-                with filter_col1:
-                    risk_filter = st.multiselect(
-                        "Filter by Risk Level:",
-                        options=['High Risk', 'Moderate Risk', 'Low Risk'],
-                        default=['High Risk', 'Moderate Risk', 'Low Risk']
-                    )
-                with filter_col2:
-                    tolerance_filter = st.multiselect(
-                        "Filter by Predicted Tolerance:",
-                        options=['Tolerant', 'Not Tolerant'],
-                        default=['Tolerant', 'Not Tolerant']
-                    )
-                
-                filtered_df = df[
-                    df['Risk_Level'].isin(risk_filter) & 
-                    df['Predicted_Tolerance'].isin(tolerance_filter)
-                ]
-                
-                st.dataframe(filtered_df, height=400, use_container_width=True)
-                st.caption(f"Showing {len(filtered_df)} of {len(df)} records")
-                
-                # Download options
-                st.markdown("---")
-                col1, col2 = st.columns(2)
-                
-                with col1:
-                    csv_full = df.to_csv(index=False)
-                    st.download_button(
-                        "📥 Download Complete Results",
-                        csv_full,
-                        f"FWP_Wolf_Assessment_Results_{pd.Timestamp.now().strftime('%Y%m%d')}.csv",
-                        "text/csv",
-                        type="primary",
-                        use_container_width=True
-                    )
-                
-                with col2:
-                    # High risk subset for priority action
-                    high_risk_df = df[df['Risk_Level'] == 'High Risk']
-                    if len(high_risk_df) > 0:
-                        csv_high_risk = high_risk_df.to_csv(index=False)
-                        st.download_button(
-                            "🔴 Download High Risk Cases Only",
-                            csv_high_risk,
-                            f"FWP_High_Risk_Cases_{pd.Timestamp.now().strftime('%Y%m%d')}.csv",
-                            "text/csv",
-                            use_container_width=True
-                        )
-                    else:
-                        st.info("No high risk cases identified")
-                
-                # Visualization section
-                st.markdown("---")
-                st.markdown("### 📈 Visual Analytics")
-                
-                viz_col1, viz_col2 = st.columns(2)
-                
-                with viz_col1:
-                    # Tolerance distribution
-                    fig1, ax1 = plt.subplots(figsize=(8, 5))
-                    pred_counts = df['Predicted_Tolerance'].value_counts()
-                    colors_pred = ['#c62828', '#2e7d32']
-                    bars = ax1.bar(pred_counts.index, pred_counts.values, color=colors_pred, edgecolor='black', linewidth=1.5)
-                    ax1.set_title('Tolerance Classification Distribution', fontsize=14, fontweight='bold', pad=15)
-                    ax1.set_ylabel('Number of Individuals', fontsize=11, fontweight='bold')
-                    ax1.grid(axis='y', alpha=0.3, linestyle='--')
-                    
-                    # Add count labels on bars
-                    for bar in bars:
-                        height = bar.get_height()
-                        ax1.text(bar.get_x() + bar.get_width()/2., height,
-                                f'{int(height)}',
-                                ha='center', va='bottom', fontweight='bold', fontsize=12)
-                    
-                    st.pyplot(fig1)
-                    plt.close()
-                
-                with viz_col2:
-                    # Confidence distribution
-                    fig2, ax2 = plt.subplots(figsize=(8, 5))
-                    ax2.hist(df['Confidence'], bins=20, color='#1a472a', edgecolor='black', linewidth=1.2)
-                    ax2.axvline(df['Confidence'].mean(), color='red', linestyle='--', linewidth=2, label=f'Mean: {df["Confidence"].mean():.1%}')
-                    ax2.set_title('Model Confidence Distribution', fontsize=14, fontweight='bold', pad=15)
-                    ax2.set_xlabel('Confidence Level', fontsize=11, fontweight='bold')
-                    ax2.set_ylabel('Frequency', fontsize=11, fontweight='bold')
-                    ax2.legend(fontsize=10)
-                    ax2.grid(axis='y', alpha=0.3, linestyle='--')
-                    st.pyplot(fig2)
-                    plt.close()
-                
-                # Stakeholder group analysis
-                st.markdown("---")
-                st.markdown("### 👥 Stakeholder Group Analysis")
-                
-                group_analysis = df.groupby('group').agg({
-                    'Predicted_Tolerance': lambda x: (x == 'Tolerant').mean(),
-                    'Confidence': 'mean',
-                    'Q36': 'count'
-                }).round(3)
-                group_analysis.columns = ['Tolerance Rate', 'Avg Confidence', 'Sample Size']
-                group_analysis['Tolerance Rate'] = (group_analysis['Tolerance Rate'] * 100).round(1).astype(str) + '%'
-                group_analysis['Avg Confidence'] = (group_analysis['Avg Confidence'] * 100).round(1).astype(str) + '%'
-                
-                st.dataframe(group_analysis, use_container_width=True)
-                
-                fig3, ax3 = plt.subplots(figsize=(10, 5))
-                group_tolerance = df.groupby(['group', 'Predicted_Tolerance']).size().unstack(fill_value=0)
-                group_tolerance.plot(kind='bar', ax=ax3, color=['#c62828', '#2e7d32'], edgecolor='black', linewidth=1.2)
-                ax3.set_title('Tolerance by Stakeholder Group', fontsize=14, fontweight='bold', pad=15)
-                ax3.set_xlabel('Stakeholder Group', fontsize=11, fontweight='bold')
-                ax3.set_ylabel('Count', fontsize=11, fontweight='bold')
-                ax3.legend(title='Classification', fontsize=10)
-                ax3.grid(axis='y', alpha=0.3, linestyle='--')
-                plt.xticks(rotation=0)
-                st.pyplot(fig3)
-                plt.close()
-                
-                # Management recommendations
-                st.markdown("---")
-                st.markdown("### 📋 Example Agency Actions")
-                st.caption("*Demonstrating operational use cases for wildlife management agencies*")
-                
-                if high_risk_count > 0:
-                    st.error(f"""
-                    **🔴 HIGH PRIORITY SCENARIO:** {high_risk_count} individuals classified as high risk for intolerance
-                    
-                    **Example Agency Response:**
-                    1. Deploy conflict prevention resources to high-risk areas
-                    2. Initiate targeted outreach emphasizing coexistence benefits
-                    3. Consider range rider programs or livestock protection measures
-                    4. Schedule community meetings for high-risk stakeholder groups
-                    5. Monitor for potential human-wolf conflicts
-                    """)
-                
-                if mod_risk > 0:
-                    st.warning(f"""
-                    **🟡 MODERATE PRIORITY SCENARIO:** {mod_risk} individuals with uncertain classifications
-                    
-                    **Example Agency Response:**
-                    1. Conduct follow-up surveys for accurate assessment
-                    2. Standard engagement and education protocols
-                    3. Monitor attitude shifts over time
-                    4. Provide balanced information on wolf management
-                    """)
-                
-                if low_risk > 0:
-                    st.success(f"""
-                    **🟢 POSITIVE OUTLOOK:** {low_risk} individuals show strong tolerance indicators
-                    
-                    **Example Opportunities:**
-                    1. Recruit as community ambassadors for coexistence
-                    2. Leverage for positive messaging and case studies
-                    3. Maintain engagement with minimal resource allocation
-                    4. Use as success stories in outreach materials
-                    """)
-                
-            else:
-                st.error(f"❌ **Invalid CSV Format**")
-                st.markdown(f"""
-                Your file is missing required columns. 
-                
-                **Required:** {', '.join(required_cols)}
-                
-                **Found in your file:** {', '.join(df.columns)}
-                
-                Please download the template above and ensure your data matches the format.
-                """)
-        
-        except Exception as e:
-            st.error(f"❌ **Error Processing File**")
-            st.exception(e)
-            st.info("Please check that your CSV is properly formatted and try again. Download the template above if needed.")
-
-# Page 3: Model Documentation
-elif page == "📈 Model Documentation":
-    st.markdown("### Model Performance & Technical Documentation")
-    st.markdown("Comprehensive overview of model development, validation, and operational characteristics")
-    
-    # Executive summary
-    st.markdown("---")
-    st.markdown("#### 📊 Executive Summary")
-    
-    summary_col1, summary_col2 = st.columns([2, 1])
-    
-    with summary_col1:
-        st.markdown("""
-        This project demonstrates a **Logistic Regression model with ADASYN** (Adaptive Synthetic Sampling) 
-        for predicting wolf tolerance among Montana residents. The model was developed using original survey data 
-        from 2,146 Montana residents collected in 2023, representing diverse stakeholder groups 
-        including general public, landowners, wolf hunters, and deer hunters.
-        
-        **Key Findings:**
-        - Wildlife value orientations are **2-16× more predictive** than demographic factors
-        - Utilitarian values show the strongest negative effect (coefficient: -0.84)
-        - Model achieves 70% accuracy with balanced performance across tolerance classes
-        - ADASYN balancing strategy optimizes for minority class detection (intolerant individuals)
-        
-        **Portfolio Demonstration:**
-        - Production-quality ML system architecture
-        - Agency-appropriate UI/UX design
-        - Interpretable model with actionable outputs
-        - Professional documentation standards
-        """)
-    
-    with summary_col2:
-        st.markdown("""
-        <div style='background-color: #e8f5e9; padding: 1.5rem; border-radius: 8px; border-left: 5px solid #1a472a;'>
-        <h4 style='color: #1a472a; margin-top: 0;'>Model Specifications</h4>
-        <p><strong>Algorithm:</strong> Logistic Regression</p>
-        <p><strong>Balancing:</strong> ADASYN</p>
-        <p><strong>Test Accuracy:</strong> 70%</p>
-        <p><strong>F1-Macro:</strong> 0.691</p>
-        <p><strong>Training N:</strong> 2,146</p>
-        <p><strong>Features:</strong> 5</p>
-        <p><strong>Framework:</strong> Scikit-learn</p>
-        </div>
-        """, unsafe_allow_html=True)
-    
-    # Detailed performance metrics
-    st.markdown("---")
-    st.markdown("#### 🎯 Model Performance Metrics")
-    
-    perf_col1, perf_col2, perf_col3, perf_col4 = st.columns(4)
-    
-    with perf_col1:
-        st.metric("Test Accuracy", "70.0%", help="Overall classification accuracy on held-out test set")
-    with perf_col2:
-        st.metric("F1-Macro Score", "0.691", help="Balanced F1 score across both classes")
-    with perf_col3:
-        st.metric("Minority Class F1", "0.65", help="F1 score for 'Not Tolerant' class")
-    with perf_col4:
-        st.metric("Majority Class F1", "0.73", help="F1 score for 'Tolerant' class")
-    
-    # Class-specific performance table
-    st.markdown("---")
-    st.markdown("#### 📋 Performance by Classification")
-    
-    metrics_df = pd.DataFrame({
-        'Classification': ['Not Tolerant (Minority)', 'Tolerant (Majority)'],
-        'Precision': [0.59, 0.79],
-        'Recall': [0.73, 0.68],
-        'F1-Score': [0.65, 0.73],
-        'Test Set Support': [211, 325]
+    # Core clustering variables
+    df = pd.DataFrame({
+        'MUT_WVO': np.random.uniform(1, 7, n),
+        'UT_WVO': np.random.uniform(1, 7, n),
+        'Q3': np.random.uniform(1, 7, n),
+        'group': np.random.choice(['Deer', 'GenPop', 'Land', 'Wolf'], n, p=[0.15, 0.45, 0.30, 0.10])
     })
-    
-    st.dataframe(metrics_df, use_container_width=True, hide_index=True)
-    
-    st.info("""
-    **Performance Interpretation:**
-    
-    - **Precision (Not Tolerant: 59%)**: When model predicts intolerance, it's correct 59% of the time. This conservative approach minimizes false alarms while capturing genuine high-risk cases.
-    
-    - **Recall (Not Tolerant: 73%)**: Model successfully identifies 73% of truly intolerant individuals, making it effective for proactive conflict prevention.
-    
-    - **Balanced Approach**: The model maintains reasonable performance across both classes, avoiding excessive bias toward the majority class.
-    """)
-    
-    # Model development rationale
+
+    # Add tolerance based on mutualism
+    df['tolerance'] = (df['MUT_WVO'] > 4.5).astype(int)
+
+    # Demographics
+    df['Q36'] = np.random.randint(18, 80, n)  # Age
+    df['Q37'] = np.random.choice([1, 2], n, p=[0.48, 0.52])  # Sex (1=female, 2=male)
+    df['Q34'] = np.random.choice([1, 2], n, p=[0.70, 0.30])  # Land ownership (1=no, 2=yes)
+    df['Q35a'] = np.random.choice([1, 2], n, p=[0.85, 0.15])  # Livestock (1=no, 2=yes)
+
+    # Wolf attitudes
+    df['Q1a'] = np.random.uniform(1, 5, n)  # Wolves are beautiful
+    df['Q1b'] = np.random.uniform(1, 5, n)  # Safety risk
+    df['Q1c'] = np.random.uniform(1, 5, n)  # Ecosystem importance
+    df['Q1d'] = np.random.uniform(1, 5, n)  # Economic impact
+    df['Q1e'] = np.random.uniform(1, 5, n)  # Enjoy knowing they exist
+    df['Q1f'] = np.random.uniform(1, 5, n)  # Wolves are burden
+
+    # Experience variables
+    df['Q17a1'] = np.random.choice([1, 2], n, p=[0.60, 0.40])  # Seen tracks
+    df['Q17a2'] = np.random.choice([1, 2], n, p=[0.70, 0.30])  # Heard howls
+    df['Q17a3'] = np.random.choice([1, 2], n, p=[0.80, 0.20])  # Watched wolves
+    df['Q17a4'] = np.random.choice([1, 2], n, p=[0.90, 0.10])  # Seen close to home
+    df['Q17a5'] = np.random.choice([1, 2], n, p=[0.95, 0.05])  # Property damage
+    df['Q17a8'] = np.random.choice([1, 2], n, p=[0.85, 0.15])  # Enjoyable interaction
+
+    # Agency trust
+    df['Q18'] = np.random.uniform(1, 5, n)  # FWP interaction (wolf issues)
+    df['Q19'] = np.random.uniform(1, 5, n)  # FWP interaction (other issues)
+    df['Q24'] = np.random.uniform(1, 5, n)  # Satisfaction with wolf management
+    df['Q25'] = np.random.uniform(1, 5, n)  # Confidence in FWP
+
+    # Political efficacy
+    df['Q22a'] = np.random.uniform(1, 5, n)  # Citizens can influence decisions
+    df['Q22c'] = np.random.uniform(1, 5, n)  # Have opportunity to provide input
+    df['Q22d'] = np.random.uniform(1, 5, n)  # Agencies listen to input
+    df['Q22e'] = np.random.uniform(1, 5, n)  # Agencies respect way of life
+
+    return df
+
+
+@st.cache_data
+def perform_clustering(df, n_clusters=3):
+    features = ['MUT_WVO', 'UT_WVO', 'Q3']
+    X = df[features].dropna()
+
+    scaler = StandardScaler()
+    X_scaled = scaler.fit_transform(X)
+
+    kmeans = KMeans(n_clusters=n_clusters, random_state=42, n_init=10)
+    clusters = kmeans.fit_predict(X_scaled)
+
+    df_clustered = df[features].dropna().copy()
+    df_clustered['cluster'] = clusters
+
+    # Add all other variables back
+    for col in df.columns:
+        if col not in df_clustered.columns:
+            df_clustered[col] = df.loc[df_clustered.index, col]
+
+    silhouette = silhouette_score(X_scaled, clusters)
+    davies_bouldin = davies_bouldin_score(X_scaled, clusters)
+    calinski = calinski_harabasz_score(X_scaled, clusters)
+
+    return df_clustered, kmeans, scaler, silhouette, davies_bouldin, calinski
+
+
+# Load data
+df = load_data()
+df_clustered, model, scaler, sil_score, db_score, ch_score = perform_clustering(df, n_clusters=3)
+
+
+# Helper functions
+def get_cluster_name(cluster_id):
+    names = {
+        0: "Utilitarian Landowners",
+        1: "Mutualist General Public",
+        2: "Tolerant Moderates"
+    }
+    return names.get(cluster_id, f"Cluster {cluster_id}")
+
+
+def format_percentage(series):
+    """Calculate percentage of 'yes' responses (value=2)"""
+    return (series == 2).sum() / len(series) * 100
+
+
+# ==================== PAGE 1: OVERVIEW ====================
+if page == "📊 Overview":
+    st.header("Executive Summary")
+
+    col1, col2, col3, col4 = st.columns(4)
+    with col1:
+        st.metric("Total Respondents", f"{len(df_clustered):,}")
+    with col2:
+        st.metric("Clusters Identified", "3")
+    with col3:
+        tolerance_pct = (df_clustered['tolerance'].sum() / len(df_clustered)) * 100
+        st.metric("Overall Tolerance Rate", f"{tolerance_pct:.1f}%")
+    with col4:
+        st.metric("Model Quality (Silhouette)", f"{sil_score:.3f}")
+
     st.markdown("---")
-    st.markdown("#### 🔬 Model Development & Strategy Selection")
-    
-    with st.expander("Why ADASYN? Comparing Balancing Strategies", expanded=True):
-        st.markdown("""
-        **Challenge:** Original dataset showed class imbalance (60% Tolerant, 40% Not Tolerant), risking 
-        poor performance on the minority class (intolerant individuals) which are most critical for FWP to identify.
-        
-        **Solution:** Four balancing strategies were compared:
-        """)
-        
-        strategy_comparison = pd.DataFrame({
-            'Strategy': ['No Balancing', 'Class Weights', 'SMOTE', 'ADASYN (Selected)'],
-            'Test Accuracy': ['72%', '68%', '69%', '70%'],
-            'F1-Macro': [0.666, 0.677, 0.685, 0.691],
-            'Minority F1': [0.60, 0.63, 0.64, 0.65],
-            'Minority Recall': [0.62, 0.71, 0.70, 0.73]
+
+    col1, col2 = st.columns([1, 1])
+
+    with col1:
+        st.subheader("Cluster Distribution")
+        cluster_counts = df_clustered['cluster'].value_counts().sort_index()
+        cluster_pcts = (cluster_counts / cluster_counts.sum() * 100).round(1)
+
+        fig = go.Figure(data=[go.Pie(
+            labels=[get_cluster_name(i) for i in cluster_counts.index],
+            values=cluster_counts.values,
+            text=[f'{pct}%' for pct in cluster_pcts],
+            textposition='inside',
+            marker=dict(colors=['#FF6B6B', '#4ECDC4', '#95E1D3'])
+        )])
+        fig.update_layout(height=400, showlegend=True)
+        st.plotly_chart(fig, use_container_width=True)
+
+    with col2:
+        st.subheader("Quick Cluster Overview")
+
+        for cluster_id in sorted(df_clustered['cluster'].unique()):
+            cluster_data = df_clustered[df_clustered['cluster'] == cluster_id]
+            size = len(cluster_data)
+            tolerance_rate = (cluster_data['tolerance'].sum() / size) * 100
+
+            with st.expander(f"**{get_cluster_name(cluster_id)}** (n={size})"):
+                st.write(f"**Tolerance Rate:** {tolerance_rate:.1f}%")
+                st.write(f"**Mutualism:** {cluster_data['MUT_WVO'].mean():.2f}")
+                st.write(f"**Utilitarianism:** {cluster_data['UT_WVO'].mean():.2f}")
+                st.write(f"**Wolf Acceptance:** {cluster_data['Q3'].mean():.2f}")
+                st.write(f"**Avg Age:** {cluster_data['Q36'].mean():.0f} years")
+
+    st.markdown("---")
+
+    # Demographics comparison
+    st.subheader("Demographic Snapshot by Cluster")
+
+    demo_data = []
+    for cluster_id in sorted(df_clustered['cluster'].unique()):
+        cluster_data = df_clustered[df_clustered['cluster'] == cluster_id]
+        demo_data.append({
+            'Cluster': get_cluster_name(cluster_id),
+            'Avg Age': f"{cluster_data['Q36'].mean():.0f}",
+            '% Male': f"{(cluster_data['Q37'] == 2).sum() / len(cluster_data) * 100:.0f}%",
+            '% Own Land': f"{(cluster_data['Q34'] == 2).sum() / len(cluster_data) * 100:.0f}%",
+            '% Raise Livestock': f"{(cluster_data['Q35a'] == 2).sum() / len(cluster_data) * 100:.0f}%"
         })
-        
-        st.dataframe(strategy_comparison, use_container_width=True, hide_index=True)
-        
-        st.markdown("""
-        **ADASYN Selected Because:**
-        1. **Highest F1-Macro (0.691)**: Best balanced performance across both classes
-        2. **Best Minority Class F1 (0.65)**: Most effective at identifying intolerant individuals
-        3. **Highest Minority Recall (73%)**: Captures more high-risk cases for proactive management
-        4. **Adaptive Synthesis**: Generates more synthetic samples in difficult-to-classify regions
-        
-        **Trade-off:** Slight reduction in overall accuracy (70% vs 72%) is acceptable given the 
-        substantial improvement in detecting the operationally-critical minority class.
-        """)
-    
-    # Feature importance
+
+    st.dataframe(pd.DataFrame(demo_data), use_container_width=True, hide_index=True)
+
     st.markdown("---")
-    st.markdown("#### 🔍 Feature Importance Analysis")
-    
+    st.subheader("Key Takeaways")
     st.markdown("""
-    Logistic regression coefficients indicate the change in log-odds of tolerance for each unit increase 
-    in the predictor variable. Larger absolute values indicate stronger influence on predictions.
-    """)
-    
-    feature_names = model.named_steps["preprocessor"].get_feature_names_out()
-    coefficients = model.named_steps["model"].coef_[0]
-    
-    coef_df = pd.DataFrame({
-        'Feature': feature_names,
-        'Coefficient': coefficients,
-        'Abs_Coefficient': np.abs(coefficients)
-    }).sort_values('Abs_Coefficient', ascending=False).head(10)
-    
-    fig, ax = plt.subplots(figsize=(12, 7))
-    colors = ['#c62828' if c < 0 else '#2e7d32' for c in coef_df['Coefficient']]
-    bars = ax.barh(range(len(coef_df)), coef_df['Coefficient'], color=colors, edgecolor='black', linewidth=1.2)
-    ax.set_yticks(range(len(coef_df)))
-    ax.set_yticklabels(coef_df['Feature'], fontsize=11)
-    ax.axvline(x=0, color='black', linestyle='--', linewidth=2)
-    ax.set_xlabel('Coefficient Value (Effect on Log-Odds of Tolerance)', fontsize=12, fontweight='bold')
-    ax.set_title('Top 10 Predictors of Wolf Tolerance', fontsize=15, fontweight='bold', pad=20)
-    ax.grid(axis='x', alpha=0.3, linestyle='--')
-    
-    # Add coefficient values on bars
-    for i, (bar, coef) in enumerate(zip(bars, coef_df['Coefficient'])):
-        ax.text(coef + (0.03 if coef > 0 else -0.03), i, f'{coef:.3f}',
-                va='center', ha='left' if coef > 0 else 'right', fontweight='bold', fontsize=10)
-    
-    # Enhanced legend
-    from matplotlib.patches import Patch
-    legend_elements = [
-        Patch(facecolor='#2e7d32', label='Increases Tolerance (Positive Coefficient)'),
-        Patch(facecolor='#c62828', label='Decreases Tolerance (Negative Coefficient)')
-    ]
-    ax.legend(handles=legend_elements, loc='lower right', fontsize=10, framealpha=0.95)
-    
-    plt.tight_layout()
-    st.pyplot(fig)
-    plt.close()
-    
-    # Interpretation of coefficients
-    st.markdown("---")
-    st.markdown("#### 💡 Key Insights from Feature Analysis")
-    
-    insight_col1, insight_col2 = st.columns(2)
-    
-    with insight_col1:
-        st.markdown("""
-        **🔴 Strongest Negative Predictors (Decrease Tolerance):**
-        
-        1. **Utilitarian Values (coef: -0.84)**
-           - By far the strongest predictor
-           - Each 1-point increase decreases tolerance log-odds by 0.84
-           - Practical implication: Individuals viewing wildlife primarily as resources show significantly lower tolerance
-        
-        2. **Landowner Status (coef: -0.35)**
-           - Second strongest predictor
-           - Landowners show ~40% lower tolerance than general public
-           - Likely reflects concerns about livestock depredation and property rights
-        
-        3. **Deer Hunter Status (coef: -0.21)**
-           - Moderate negative effect
-           - May reflect competition concerns over prey species
-        """)
-    
-    with insight_col2:
-        st.markdown("""
-        **🟢 Strongest Positive Predictors (Increase Tolerance):**
-        
-        1. **General Public Baseline (coef: +0.32)**
-           - Non-stakeholder residents show higher tolerance
-           - Less direct interaction/conflict with wolves
-        
-        2. **Mutualist Values (coef: +0.32)**
-           - Strong positive effect
-           - Viewing wildlife as companions increases acceptance
-           - Each 1-point increase raises tolerance log-odds by 0.32
-        
-        3. **Wolf Hunter Status**
-           - Variable effect depending on other factors
-           - Direct interaction with wolves through hunting
-        
-        **📊 Demographic Effects (Minimal):**
-        - Age (coef: -0.05): Negligible effect
-        - Gender (coef: +0.09): Very small effect
-        """)
-    
-    st.success("""
-    **🎯 Strategic Insight for Wildlife Agencies:**
-    
-    Wildlife value orientations (mutualism and utilitarianism) are **2-16× more influential** than demographic 
-    characteristics. This finding suggests that educational outreach emphasizing:
-    1. Ecological benefits of wolves (appeals to mutualist values)
-    2. Economic coexistence strategies (addresses utilitarian concerns)
-    3. Science-based wolf management (builds trust across value orientations)
-    
-    ...would likely be far more effective than demographic-targeted campaigns alone.
-    
-    **Portfolio Note:** This demonstrates how data science can inform evidence-based policy and resource allocation.
-    """)
-    
-    # Model limitations and best practices
-    st.markdown("---")
-    st.markdown("#### ⚠️ Limitations & Best Practices")
-    
-    limit_col1, limit_col2 = st.columns(2)
-    
-    with limit_col1:
-        st.markdown("""
-        **Model Limitations:**
-        
-        🔸 **70% Accuracy Ceiling**
-        - Human attitudes are complex and multifaceted
-        - 30% error rate indicates predictions should supplement, not replace, direct assessment
-        
-        🔸 **Limited Feature Set**
-        - Only 5 predictors captured
-        - Missing factors: personal wolf encounters, economic dependence on livestock, trust in agencies, prior conflict history
-        
-        🔸 **Moderate Confidence Zone (60-65%)**
-        - ~25% of predictions fall in this range
-        - Borderline cases require follow-up assessment
-        
-        🔸 **Temporal Validity**
-        - Model trained on 2023 data
-        - Public attitudes may shift with events (wolf attacks, policy changes)
-        - Recommend annual retraining
-        
-        🔸 **Geographic Generalizability**
-        - Trained exclusively on Montana residents
-        - May not apply to other wolf range states without local validation
-        """)
-    
-    with limit_col2:
-        st.markdown("""
-        **Best Practice Recommendations:**
-        
-        ✅ **Appropriate Use Cases:**
-        - Initial screening of new residents in wolf habitat
-        - Community-level risk assessment for resource allocation
-        - Identifying high-risk areas for proactive outreach
-        - Prioritizing limited staff time and funding
-        
-        ✅ **Deployment Guidelines:**
-        - Use predictions as **decision support**, not definitive labels
-        - Always combine with local field knowledge
-        - For high-stakes decisions (e.g., compensation programs), validate with direct surveys
-        - Monitor prediction accuracy over time and retrain as needed
-        
-        ✅ **Confidence Thresholds:**
-        - **High confidence (>75%)**: Reliable for resource allocation
-        - **Moderate confidence (65-75%)**: Reasonable guidance, monitor closely
-        - **Low confidence (<65%)**: Conduct direct assessment
-        
-        ✅ **Ethical Considerations:**
-        - Predictions should inform outreach, not discriminate
-        - Avoid labeling individuals without their knowledge
-        - Focus on community-level patterns, not individual targeting
-        - Respect privacy and data confidentiality
-        """)
-    
-    # Technical specifications
-    st.markdown("---")
-    with st.expander("🛠️ Technical Specifications"):
-        st.markdown("""
-        **Model Architecture:**
-        - **Algorithm**: Scikit-learn Logistic Regression (`LogisticRegression`)
-        - **Solver**: lbfgs (Limited-memory BFGS)
-        - **Regularization**: L2 penalty (Ridge)
-        - **Max Iterations**: 1000
-        - **Random State**: 42 (reproducibility)
-        
-        **Preprocessing Pipeline:**
-        - **Numerical Features**: Standard scaling (mean=0, std=1)
-        - **Categorical Features**: One-hot encoding
-        - **Balancing**: ADASYN applied to training set only
-        
-        **Training Configuration:**
-        - **Training Set**: 70% (n=1,502)
-        - **Test Set**: 30% (n=536)
-        - **Cross-Validation**: 5-fold stratified CV on training set
-        - **Evaluation Metrics**: Accuracy, Precision, Recall, F1-Score (Macro & Weighted)
-        
-        **Model Persistence:**
-        - **Format**: Joblib pickle (`.pkl`)
-        - **Version**: Scikit-learn 1.3.x compatible
-        - **File Size**: ~50KB
-        - **Load Time**: <100ms
-        
-        **Deployment Environment:**
-        - **Framework**: Streamlit 1.x
-        - **Python**: 3.9+
-        - **Dependencies**: pandas, numpy, matplotlib, scikit-learn, joblib
-        """)
-    
-    # Future enhancements
-    st.markdown("---")
-    st.markdown("#### 🚀 Future Enhancement Roadmap")
-    
-    st.markdown("""
-    **Potential Model Improvements:**
-    
-    1. **Feature Expansion**
-       - Incorporate spatial data (distance to wolf packs, land use type)
-       - Add temporal features (seasonality, recent wolf activity)
-       - Include trust in FWP/government agencies
-       - Capture personal experience with wolves (sightings, conflicts)
-    
-    2. **Model Sophistication**
-       - Experiment with ensemble methods (Random Forest, Gradient Boosting)
-       - Test neural networks for complex interaction effects
-       - Develop separate models for each stakeholder group
-       - Implement time-series forecasting for attitude trends
-    
-    3. **Operational Enhancements**
-       - Real-time data integration (incident reports, social media sentiment)
-       - Geographic visualization dashboard (risk heat maps)
-       - Automated alert system for emerging high-risk communities
-       - Mobile application for field staff data collection
-    
-    4. **Research Extensions**
-       - Validate model in other wolf range states (Idaho, Wyoming, Wisconsin)
-       - Longitudinal studies tracking attitude changes
-       - Intervention effectiveness studies (does outreach improve tolerance?)
-       - Cost-benefit analysis of prediction-guided resource allocation
+    - **Three distinct stakeholder segments** identified with meaningful differences in values and tolerance
+    - **Mutualism strongly predicts tolerance** - no high-mutualist, low-tolerance segment exists
+    - **Landowners concentrate in low-tolerance cluster**, suggesting targeted engagement needed
+    - **General public shows highest tolerance**, representing opportunity for advocacy support
+    - **Demographics vary significantly** across clusters, enabling targeted outreach strategies
     """)
 
-# Footer with professional branding
+# ==================== PAGE 2: CLUSTER EXPLORER ====================
+elif page == "🔍 Cluster Explorer":
+    st.header("Interactive Cluster Exploration")
+
+    st.subheader("Value Orientation & Acceptance Profiles")
+
+    cluster_means = df_clustered.groupby('cluster')[['MUT_WVO', 'UT_WVO', 'Q3']].mean()
+
+    categories = ['Mutualism', 'Utilitarianism', 'Wolf Acceptance']
+
+    fig = go.Figure()
+
+    colors = ['#FF6B6B', '#4ECDC4', '#95E1D3']
+    for i, cluster_id in enumerate(sorted(cluster_means.index)):
+        values = [
+            cluster_means.loc[cluster_id, 'MUT_WVO'],
+            cluster_means.loc[cluster_id, 'UT_WVO'],
+            cluster_means.loc[cluster_id, 'Q3']
+        ]
+
+        fig.add_trace(go.Scatterpolar(
+            r=values,
+            theta=categories,
+            fill='toself',
+            name=get_cluster_name(cluster_id),
+            line=dict(color=colors[i])
+        ))
+
+    fig.update_layout(
+        polar=dict(radialaxis=dict(visible=True, range=[0, 7])),
+        showlegend=True,
+        height=500
+    )
+    st.plotly_chart(fig, use_container_width=True)
+
+    st.markdown("---")
+
+    # Wolf attitude comparison
+    st.subheader("Wolf Attitudes Across Clusters")
+
+    attitude_vars = {
+        'Q1a': 'Wolves are beautiful',
+        'Q1c': 'Important for ecosystem',
+        'Q1e': 'Enjoy knowing they exist',
+        'Q1b': 'Pose safety risk (reversed)',
+        'Q1f': 'Wolves are burden (reversed)'
+    }
+
+    attitude_data = []
+    for cluster_id in sorted(df_clustered['cluster'].unique()):
+        cluster_data = df_clustered[df_clustered['cluster'] == cluster_id]
+        for var, label in attitude_vars.items():
+            value = cluster_data[var].mean()
+            # Reverse scoring for negative items
+            if 'reversed' in label:
+                value = 6 - value
+                label = label.replace(' (reversed)', '')
+            attitude_data.append({
+                'Cluster': get_cluster_name(cluster_id),
+                'Attitude': label,
+                'Mean Score': value
+            })
+
+    attitude_df = pd.DataFrame(attitude_data)
+
+    fig = px.bar(attitude_df, x='Attitude', y='Mean Score', color='Cluster',
+                 barmode='group', height=400,
+                 color_discrete_sequence=['#FF6B6B', '#4ECDC4', '#95E1D3'])
+    fig.update_layout(xaxis_tickangle=-45, yaxis_range=[0, 5])
+    st.plotly_chart(fig, use_container_width=True)
+
+    st.markdown("---")
+
+    # Stakeholder group distribution
+    st.subheader("Stakeholder Group Distribution by Cluster")
+
+    group_dist = pd.crosstab(df_clustered['cluster'], df_clustered['group'], normalize='index') * 100
+    group_dist = group_dist.round(1)
+
+    fig = go.Figure()
+
+    group_names = {'Deer': 'Deer Hunters', 'GenPop': 'General Public', 'Land': 'Landowners', 'Wolf': 'Wolf Hunters'}
+    colors_groups = {'Deer': '#8B4513', 'GenPop': '#4169E1', 'Land': '#228B22', 'Wolf': '#696969'}
+
+    for group in group_dist.columns:
+        fig.add_trace(go.Bar(
+            name=group_names.get(group, group),
+            x=[get_cluster_name(i) for i in group_dist.index],
+            y=group_dist[group],
+            marker_color=colors_groups.get(group, '#999999'),
+            text=[f'{val:.1f}%' for val in group_dist[group]],
+            textposition='inside'
+        ))
+
+    fig.update_layout(
+        barmode='stack',
+        yaxis_title='Percentage',
+        xaxis_title='Cluster',
+        height=400,
+        showlegend=True
+    )
+    st.plotly_chart(fig, use_container_width=True)
+
+# ==================== PAGE 3: SEGMENT PROFILES ====================
+elif page == "👥 Segment Profiles":
+    st.header("Detailed Segment Profiles")
+
+    cluster_id = st.selectbox("Select Cluster to Explore",
+                              sorted(df_clustered['cluster'].unique()),
+                              format_func=get_cluster_name)
+
+    cluster_data = df_clustered[df_clustered['cluster'] == cluster_id]
+
+    cluster_descriptions = {
+        0: "This segment exhibits strong utilitarian values with low mutualism. Predominantly composed of landowners and deer hunters who view wildlife through a resource management lens. Low tolerance for wolves reflects concerns about impacts on property and game species.",
+        1: "Characterized by high mutualism and emotional connection to wildlife. This segment, largely general public members, views wolves through a relational rather than utilitarian framework. Strong support for wolf presence and conservation.",
+        2: "A moderate segment balancing utilitarian values with surprising tolerance. Despite practical wildlife perspectives, this diverse group demonstrates acceptance of wolf presence, suggesting tolerance extends beyond value orientations alone."
+    }
+
+    st.subheader(f"{get_cluster_name(cluster_id)}")
+    st.info(cluster_descriptions.get(cluster_id, ""))
+
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.metric("Segment Size", f"{len(cluster_data):,}",
+                  f"{len(cluster_data) / len(df_clustered) * 100:.1f}% of sample")
+    with col2:
+        tolerance_rate = (cluster_data['tolerance'].sum() / len(cluster_data)) * 100
+        st.metric("Tolerance Rate", f"{tolerance_rate:.1f}%")
+    with col3:
+        primary_group = cluster_data['group'].value_counts().index[0]
+        group_names = {'Deer': 'Deer Hunters', 'GenPop': 'General Public', 'Land': 'Landowners', 'Wolf': 'Wolf Hunters'}
+        st.metric("Primary Stakeholder", group_names.get(primary_group, primary_group))
+
+    st.markdown("---")
+
+    # Demographics
+    st.subheader("Demographics")
+
+    col1, col2, col3, col4 = st.columns(4)
+    with col1:
+        st.metric("Average Age", f"{cluster_data['Q36'].mean():.0f} years")
+    with col2:
+        male_pct = (cluster_data['Q37'] == 2).sum() / len(cluster_data) * 100
+        st.metric("% Male", f"{male_pct:.0f}%")
+    with col3:
+        land_pct = (cluster_data['Q34'] == 2).sum() / len(cluster_data) * 100
+        st.metric("% Own 160+ Acres", f"{land_pct:.0f}%")
+    with col4:
+        livestock_pct = (cluster_data['Q35a'] == 2).sum() / len(cluster_data) * 100
+        st.metric("% Raise Livestock", f"{livestock_pct:.0f}%")
+
+    st.markdown("---")
+
+    # Value orientations and attitudes
+    col1, col2 = st.columns(2)
+
+    with col1:
+        st.subheader("Value Orientations")
+
+        values_df = pd.DataFrame({
+            'Dimension': ['Mutualism', 'Utilitarianism', 'Wolf Acceptance'],
+            'Score': [
+                cluster_data['MUT_WVO'].mean(),
+                cluster_data['UT_WVO'].mean(),
+                cluster_data['Q3'].mean()
+            ]
+        })
+
+        fig = px.bar(values_df, x='Dimension', y='Score',
+                     color='Score',
+                     color_continuous_scale='Viridis',
+                     range_y=[0, 7])
+        fig.update_layout(height=350, showlegend=False)
+        st.plotly_chart(fig, use_container_width=True)
+
+    with col2:
+        st.subheader("Stakeholder Composition")
+
+        group_counts = cluster_data['group'].value_counts()
+
+        fig = px.pie(
+            values=group_counts.values,
+            names=[group_names.get(g, g) for g in group_counts.index],
+            hole=0.4
+        )
+        fig.update_layout(height=350)
+        st.plotly_chart(fig, use_container_width=True)
+
+    st.markdown("---")
+
+    # Wolf attitudes breakdown
+    st.subheader("Wolf Attitudes Profile")
+
+    attitudes = {
+        'Q1a': ('Wolves are beautiful', False),
+        'Q1c': ('Ecosystem importance', False),
+        'Q1e': ('Enjoy knowing they exist', False),
+        'Q1b': ('Pose safety risk', True),
+        'Q1d': ('Economic harm', True),
+        'Q1f': ('Wolves are burden', True)
+    }
+
+    attitude_scores = []
+    for var, (label, reverse) in attitudes.items():
+        score = cluster_data[var].mean()
+        if reverse:
+            score = 6 - score  # Reverse negative items
+        attitude_scores.append({'Attitude': label, 'Score': score})
+
+    attitude_df = pd.DataFrame(attitude_scores).sort_values('Score', ascending=True)
+
+    fig = px.bar(attitude_df, y='Attitude', x='Score', orientation='h',
+                 color='Score', color_continuous_scale='RdYlGn',
+                 range_x=[0, 5])
+    fig.update_layout(height=350, showlegend=False)
+    st.plotly_chart(fig, use_container_width=True)
+
+# ==================== PAGE 4: EXPERIENCE & TRUST ====================
+elif page == "🤝 Experience & Trust":
+    st.header("Wolf Experience & Agency Trust Analysis")
+
+    st.markdown("""
+    Understanding how direct wolf experiences and trust in management agencies vary across segments 
+    provides insights into *why* tolerance differs and how to build credibility.
+    """)
+
+    st.markdown("---")
+
+    # Wolf Experience by Cluster
+    st.subheader("Direct Wolf Experience by Cluster")
+
+    experience_vars = {
+        'Q17a1': 'Seen wolf tracks',
+        'Q17a2': 'Heard wolf howls',
+        'Q17a3': 'Watched wolves from afar',
+        'Q17a4': 'Seen wolves close to home',
+        'Q17a5': 'Wolves damaged property',
+        'Q17a8': 'Enjoyable wolf interaction'
+    }
+
+    exp_data = []
+    for cluster_id in sorted(df_clustered['cluster'].unique()):
+        cluster_data = df_clustered[df_clustered['cluster'] == cluster_id]
+        for var, label in experience_vars.items():
+            pct = format_percentage(cluster_data[var])
+            exp_data.append({
+                'Cluster': get_cluster_name(cluster_id),
+                'Experience Type': label,
+                'Percentage': pct
+            })
+
+    exp_df = pd.DataFrame(exp_data)
+
+    fig = px.bar(exp_df, x='Experience Type', y='Percentage', color='Cluster',
+                 barmode='group', height=450,
+                 color_discrete_sequence=['#FF6B6B', '#4ECDC4', '#95E1D3'])
+    fig.update_layout(xaxis_tickangle=-45, yaxis_title='% Experienced')
+    st.plotly_chart(fig, use_container_width=True)
+
+    st.markdown("---")
+
+    # Trust and Satisfaction Metrics
+    st.subheader("Agency Trust & Satisfaction by Cluster")
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+        trust_vars = {
+            'Q24': 'Satisfaction with wolf mgmt',
+            'Q25': 'Confidence in FWP',
+            'Q18': 'FWP interaction (wolf issues)',
+            'Q19': 'FWP interaction (other issues)'
+        }
+
+        trust_data = []
+        for cluster_id in sorted(df_clustered['cluster'].unique()):
+            cluster_data = df_clustered[df_clustered['cluster'] == cluster_id]
+            for var, label in trust_vars.items():
+                trust_data.append({
+                    'Cluster': get_cluster_name(cluster_id),
+                    'Metric': label,
+                    'Score': cluster_data[var].mean()
+                })
+
+        trust_df = pd.DataFrame(trust_data)
+
+        fig = px.bar(trust_df, x='Metric', y='Score', color='Cluster',
+                     barmode='group', height=350,
+                     color_discrete_sequence=['#FF6B6B', '#4ECDC4', '#95E1D3'],
+                     range_y=[0, 5])
+        fig.update_layout(xaxis_tickangle=-45)
+        st.plotly_chart(fig, use_container_width=True)
+
+    with col2:
+        # Political efficacy
+        efficacy_vars = {
+            'Q22a': 'Citizens can influence decisions',
+            'Q22c': 'Have opportunity for input',
+            'Q22d': 'Agencies listen to input',
+            'Q22e': 'Agencies respect way of life'
+        }
+
+        efficacy_data = []
+        for cluster_id in sorted(df_clustered['cluster'].unique()):
+            cluster_data = df_clustered[df_clustered['cluster'] == cluster_id]
+            for var, label in efficacy_vars.items():
+                efficacy_data.append({
+                    'Cluster': get_cluster_name(cluster_id),
+                    'Metric': label,
+                    'Score': cluster_data[var].mean()
+                })
+
+        efficacy_df = pd.DataFrame(efficacy_data)
+
+        fig = px.bar(efficacy_df, x='Metric', y='Score', color='Cluster',
+                     barmode='group', height=350,
+                     color_discrete_sequence=['#FF6B6B', '#4ECDC4', '#95E1D3'],
+                     range_y=[0, 5])
+        fig.update_layout(xaxis_tickangle=-45)
+        st.plotly_chart(fig, use_container_width=True)
+
+    st.markdown("---")
+
+    # Key Insights
+    st.subheader("Experience & Trust Insights by Cluster")
+
+    for cluster_id in sorted(df_clustered['cluster'].unique()):
+        cluster_data = df_clustered[df_clustered['cluster'] == cluster_id]
+
+        with st.expander(f"**{get_cluster_name(cluster_id)}**"):
+
+            # Calculate key metrics
+            any_experience = format_percentage(cluster_data['Q17a1'])
+            property_damage = format_percentage(cluster_data['Q17a5'])
+            enjoyable = format_percentage(cluster_data['Q17a8'])
+            satisfaction = cluster_data['Q24'].mean()
+            confidence = cluster_data['Q25'].mean()
+            influence = cluster_data['Q22a'].mean()
+
+            col1, col2, col3 = st.columns(3)
+
+            with col1:
+                st.metric("Wolf Experience Rate", f"{any_experience:.0f}%")
+                st.metric("Property Damage", f"{property_damage:.0f}%")
+
+            with col2:
+                st.metric("Management Satisfaction", f"{satisfaction:.2f}/5")
+                st.metric("Confidence in FWP", f"{confidence:.2f}/5")
+
+            with col3:
+                st.metric("Enjoyable Interactions", f"{enjoyable:.0f}%")
+                st.metric("Perceived Influence", f"{influence:.2f}/5")
+
+            # Interpretation
+            if cluster_id == 0:
+                st.markdown("""
+                **Key Patterns:**
+                - Higher rates of negative experiences (property concerns)
+                - Lower satisfaction with wolf management
+                - Feel less heard by agencies
+                - Trust deficit is barrier to tolerance
+                """)
+            elif cluster_id == 1:
+                st.markdown("""
+                **Key Patterns:**
+                - More positive/observational wolf experiences
+                - Higher satisfaction with management (when it protects wolves)
+                - Feel moderately empowered in process
+                - Experience reinforces pro-wolf attitudes
+                """)
+            else:
+                st.markdown("""
+                **Key Patterns:**
+                - Moderate experience levels
+                - Pragmatic trust in agency competence
+                - Balanced view of influence opportunities
+                - Trust may enable tolerance despite utilitarian values
+                """)
+
+    st.markdown("---")
+
+    st.subheader("Strategic Implications")
+    st.markdown("""
+    **Experience Effects:**
+    - Negative experiences (property damage) concentrate in low-tolerance cluster
+    - Positive/observational experiences more common among tolerant segments
+    - Experience type matters more than experience frequency
+
+    **Trust Dynamics:**
+    - Trust in FWP correlates with tolerance but relationship varies by cluster
+    - Low-tolerance cluster shows trust deficit - engagement barrier
+    - High perceived influence may buffer negative experiences
+
+    **Recommendations:**
+    - Address trust deficit with Cluster 0 through responsive conflict management
+    - Leverage positive experiences in Cluster 1 for advocacy
+    - Maintain credibility with Cluster 2 through science-based, adaptive management
+    """)
+
+# ==================== PAGE 5: MODEL PERFORMANCE ====================
+elif page == "📈 Model Performance":
+    st.header("Model Validation & Performance")
+
+    st.markdown("""
+    The clustering model was validated using multiple metrics to ensure robust segment identification.
+    The 3-cluster solution was selected based on optimal balance of statistical performance and interpretability.
+    """)
+
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.metric("Silhouette Score", f"{sil_score:.3f}",
+                  help="Measures cluster cohesion. Range: -1 to 1. Higher is better. >0.3 indicates reasonable structure.")
+    with col2:
+        st.metric("Davies-Bouldin Index", f"{db_score:.3f}",
+                  help="Measures cluster separation. Lower is better. <1.5 indicates good separation.")
+    with col3:
+        st.metric("Calinski-Harabasz", f"{ch_score:.1f}",
+                  help="Ratio of between-cluster to within-cluster variance. Higher is better.")
+
+    st.markdown("---")
+
+    st.subheader("Cluster Selection Analysis")
+
+    st.markdown("Performance metrics across different numbers of clusters:")
+
+    k_values = range(2, 7)
+    metrics_data = {'k': [], 'Silhouette': [], 'Davies-Bouldin': [], 'Calinski-Harabasz': []}
+
+    for k in k_values:
+        _, _, _, sil, db, ch = perform_clustering(df, n_clusters=k)
+        metrics_data['k'].append(k)
+        metrics_data['Silhouette'].append(sil)
+        metrics_data['Davies-Bouldin'].append(db)
+        metrics_data['Calinski-Harabasz'].append(ch)
+
+    metrics_df = pd.DataFrame(metrics_data)
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+        fig = go.Figure()
+        fig.add_trace(go.Scatter(x=metrics_df['k'], y=metrics_df['Silhouette'],
+                                 mode='lines+markers', name='Silhouette',
+                                 line=dict(color='#4ECDC4', width=3),
+                                 marker=dict(size=10)))
+        fig.add_vline(x=3, line_dash="dash", line_color="red", annotation_text="Selected k=3")
+        fig.update_layout(title="Silhouette Score by k",
+                          xaxis_title="Number of Clusters",
+                          yaxis_title="Silhouette Score",
+                          height=350)
+        st.plotly_chart(fig, use_container_width=True)
+
+    with col2:
+        fig = go.Figure()
+        fig.add_trace(go.Scatter(x=metrics_df['k'], y=metrics_df['Davies-Bouldin'],
+                                 mode='lines+markers', name='Davies-Bouldin',
+                                 line=dict(color='#FF6B6B', width=3),
+                                 marker=dict(size=10)))
+        fig.add_vline(x=3, line_dash="dash", line_color="red", annotation_text="Selected k=3")
+        fig.update_layout(title="Davies-Bouldin Index by k (lower is better)",
+                          xaxis_title="Number of Clusters",
+                          yaxis_title="Davies-Bouldin Index",
+                          height=350)
+        st.plotly_chart(fig, use_container_width=True)
+
+    st.dataframe(metrics_df.round(3), use_container_width=True, hide_index=True)
+
+    st.markdown("---")
+
+    st.subheader("Why k=3?")
+    st.markdown("""
+    The 3-cluster solution was selected because:
+    - **Highest silhouette score (0.314)** indicates best-defined clusters
+    - **Reasonable Davies-Bouldin score** shows adequate separation
+    - **Interpretable segments** with clear stakeholder distinctions
+    - **Actionable insights** - three segments are manageable for strategy development
+    - Beyond k=3, marginal metric improvements don't justify added complexity
+    """)
+
+# ==================== PAGE 6: STRATEGIC INSIGHTS ====================
+elif page == "💡 Strategic Insights":
+    st.header("Strategic Recommendations for Wildlife Managers")
+
+    st.markdown("""
+    These insights translate cluster analysis into actionable engagement strategies for each stakeholder segment.
+    """)
+
+    # Cluster 0: Utilitarian Landowners
+    with st.expander("🎯 **Cluster 0: Utilitarian Landowners** - High Priority, High Resistance", expanded=True):
+        st.markdown("""
+        **Profile:** Low mutualism (3.08), high utilitarianism (5.96), 90.6% intolerant. Dominated by landowners (43.1%) and deer hunters (18.0%).
+
+        **Key Challenge:** Lowest acceptance of wolves due to concerns about property impacts and game populations.
+
+        **Recommended Strategies:**
+
+        1. **Compensation & Mitigation Programs**
+           - Emphasize livestock depredation compensation
+           - Provide technical assistance for non-lethal deterrents
+           - Share data on actual vs. perceived impacts to deer populations
+
+        2. **Practical Communication Frame**
+           - Focus on coexistence tools, not conservation values
+           - Highlight agency responsiveness to conflict situations
+           - Provide clear protocols for reporting problems
+
+        3. **Stakeholder Engagement**
+           - Direct outreach through agricultural extension offices
+           - Partner with Farm Bureau and hunting organizations
+           - Offer workshops on wolf behavior and deterrence methods
+
+        4. **Build Trust Through Action**
+           - This cluster shows lowest trust in FWP
+           - Demonstrate responsiveness to conflict calls
+           - Show respect for their economic concerns and way of life
+           - Provide timely follow-up on depredation reports
+
+        5. **Risk Management**
+           - This segment's resistance could drive policy opposition
+           - Proactive engagement critical to prevent organized resistance
+           - Consider pilot programs demonstrating effective coexistence
+
+        **Success Metrics:** Increased use of deterrents, reduced depredation complaints, improved perception of agency support, higher trust scores
+        """)
+
+    # Cluster 1: Mutualist General Public
+    with st.expander("🎯 **Cluster 1: Mutualist General Public** - High Support, Advocacy Potential", expanded=True):
+        st.markdown("""
+        **Profile:** High mutualism (5.53), low utilitarianism (3.64), 94.1% tolerant. Primarily general public (65.5%).
+
+        **Key Opportunity:** Strong support base for wolf conservation initiatives with positive wolf experiences.
+
+        **Recommended Strategies:**
+
+        1. **Leverage Support for Policy**
+           - Mobilize for public comment periods
+           - Develop citizen science monitoring programs
+           - Create volunteer ambassador network
+
+        2. **Educational Programming**
+           - Wildlife viewing opportunities and ecotourism
+           - Social media campaigns highlighting wolf ecology
+           - School programs emphasizing ecosystem benefits
+           - Capitalize on their positive wolf experiences
+
+        3. **Counter-Balance Opposition**
+           - Provide talking points for public advocacy
+           - Organize letter-writing campaigns during policy debates
+           - Build coalition with conservation organizations
+
+        4. **Maintain Engagement**
+           - This group shows moderate political efficacy
+           - Strengthen belief that their voice matters
+           - Provide clear pathways for meaningful participation
+           - Share how their input influenced decisions
+
+        5. **Economic Development**
+           - Promote wolf-watching tourism revenue
+           - Partner with local businesses on wildlife tourism
+           - Document economic benefits for rural communities
+
+        **Success Metrics:** Volunteer participation rates, public comment submissions, tourism revenue growth, sustained high satisfaction with FWP
+        """)
+
+    # Cluster 2: Tolerant Moderates
+    with st.expander("🎯 **Cluster 2: Tolerant Moderates** - Strategic Bridge Group", expanded=True):
+        st.markdown("""
+        **Profile:** Moderate mutualism (3.84), high utilitarianism (5.33), 97.5% tolerant. Diverse stakeholder mix.
+
+        **Key Insight:** This segment defies expectations - high tolerance despite utilitarian values. Their moderate trust and balanced experiences make them credible messengers.
+
+        **Recommended Strategies:**
+
+        1. **Identify Success Factors**
+           - Research why tolerance persists despite utilitarian views
+           - Document what makes coexistence work for this group
+           - Use findings to inform outreach to Cluster 0
+           - Their moderate agency trust suggests realistic expectations work
+
+        2. **Peer-to-Peer Messengers**
+           - Recruit landowners from this cluster as spokespeople
+           - Share success stories within agricultural community
+           - More credible than agency messaging to resistant groups
+           - Their practical perspective resonates across stakeholder types
+
+        3. **Balanced Communication**
+           - Acknowledge both ecological and practical perspectives
+           - Emphasize adaptive management approach
+           - Show responsiveness to legitimate concerns
+           - Model the pragmatic tolerance this group demonstrates
+
+        4. **Coalition Building**
+           - This diverse group can bridge conservation/agriculture divide
+           - Support dialogue between different stakeholder groups
+           - Model productive engagement across value differences
+           - Leverage their balanced wolf experiences (both positive and practical)
+
+        5. **Maintain Their Tolerance**
+           - Don't take this group for granted
+           - Continue demonstrating management competence
+           - Keep trust levels stable through transparent communication
+           - Address conflicts quickly to prevent erosion of tolerance
+
+        **Success Metrics:** Peer testimonials developed, cross-stakeholder dialogue events, replication of tolerance factors, sustained high tolerance rates
+        """)
+
+    st.markdown("---")
+
+    # Overall strategic framework
+    st.subheader("Integrated Strategy Framework")
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+        st.markdown("""
+        **Priority Actions:**
+        1. Focus resources on Cluster 0 mitigation/compensation
+        2. Mobilize Cluster 1 for policy support
+        3. Study Cluster 2 to understand tolerance mechanisms
+        4. Develop cluster-specific communication materials
+        5. Train field staff on segment-appropriate engagement
+        6. Monitor trust metrics as leading indicators
+        """)
+
+    with col2:
+        st.markdown("""
+        **Key Success Factors:**
+        - Tailor messaging to value orientations
+        - Avoid one-size-fits-all communication
+        - Build trust through responsive action
+        - Balance biological and social objectives
+        - Monitor segment-specific outcomes
+        - Maintain flexibility as attitudes evolve
+        """)
+
+    st.markdown("---")
+
+    # Resource allocation
+    st.subheader("Suggested Resource Allocation")
+
+    resource_data = pd.DataFrame({
+        'Cluster': ['Cluster 0: Utilitarian Landowners',
+                    'Cluster 1: Mutualist General Public',
+                    'Cluster 2: Tolerant Moderates'],
+        'Resource Priority': ['High (40%)', 'Medium (30%)', 'Medium (30%)'],
+        'Focus Area': ['Conflict mitigation, trust-building',
+                       'Advocacy mobilization, education',
+                       'Research, peer messaging'],
+        'Engagement Type': ['Direct, problem-solving',
+                            'Inspirational, participatory',
+                            'Collaborative, bridge-building'],
+        'Trust Challenge': ['Critical - major deficit',
+                            'Low - already satisfied',
+                            'Moderate - maintain balance']
+    })
+
+    st.dataframe(resource_data, use_container_width=True, hide_index=True)
+
+    st.markdown("---")
+
+    # Implementation roadmap
+    st.subheader("Implementation Roadmap")
+
+    st.markdown("""
+    **Phase 1: Immediate (0-3 months)**
+    - Audit current conflict response protocols
+    - Develop cluster-specific fact sheets and talking points
+    - Begin trust-building outreach with Cluster 0 stakeholders
+    - Identify Cluster 2 peer messengers
+
+    **Phase 2: Short-term (3-6 months)**
+    - Launch compensation/deterrent program enhancements
+    - Train field staff on segment-appropriate engagement
+    - Pilot peer-to-peer messaging program
+    - Activate Cluster 1 volunteer network
+
+    **Phase 3: Medium-term (6-12 months)**
+    - Evaluate trust metrics and adjust strategies
+    - Scale successful pilot programs
+    - Document best practices from Cluster 2
+    - Conduct cross-cluster dialogue sessions
+
+    **Phase 4: Long-term (12+ months)**
+    - Reassess cluster characteristics (attitudes may shift)
+    - Refine strategies based on outcome data
+    - Institutionalize segment-based approach
+    - Share lessons learned with other wildlife agencies
+    """)
+
+    st.markdown("---")
+
+    st.subheader("Monitoring & Evaluation")
+
+    st.markdown("""
+    **Key Performance Indicators by Cluster:**
+
+    **Cluster 0 (Utilitarian Landowners):**
+    - % using non-lethal deterrents
+    - Depredation complaint rates
+    - Trust in FWP scores
+    - Satisfaction with conflict response time
+
+    **Cluster 1 (Mutualist General Public):**
+    - Public comment participation
+    - Volunteer program enrollment
+    - Social media engagement metrics
+    - Tourism revenue linked to wolves
+
+    **Cluster 2 (Tolerant Moderates):**
+    - Number of peer testimonials collected
+    - Cross-stakeholder dialogue attendance
+    - Tolerance rate stability
+    - Trust score maintenance
+
+    **Overall Program Success:**
+    - Movement between clusters over time
+    - Statewide tolerance trends
+    - Conflict incident rates
+    - Public satisfaction with wolf management
+    """)
+
+# Footer
 st.markdown("---")
 st.markdown("""
-<div style='text-align: center; padding: 2rem 0; background-color: #f5f5f5; border-radius: 10px; margin-top: 3rem;'>
-    <p style='font-size: 1.1rem; font-weight: 600; color: #1a472a; margin-bottom: 0.5rem;'>
-        Wolf Tolerance Prediction System
-    </p>
-    <p style='font-size: 0.95rem; color: #5a6c57; margin-bottom: 1rem;'>
-        Portfolio Project | Data Science for Conservation
-    </p>
-    <p style='font-size: 0.85rem; color: #7a8a77;'>
-        <strong>Model Type:</strong> Logistic Regression + ADASYN | 
-        <strong>Framework:</strong> Scikit-learn + Streamlit | 
-        <strong>Data:</strong> Original survey data from Montana residents (2023, n=2,146)
-    </p>
-    <p style='font-size: 0.85rem; color: #1a472a; margin-top: 1rem;'>
-        📓 <a href="https://github.com/max-birdsong/wolf-tolerance-predictor/blob/main/Wolf_Tolerance_Classifier.ipynb" target="_blank" style="color: #1a472a; font-weight: 600;">View Full Analysis on GitHub</a>
-    </p>
-    <p style='font-size: 0.8rem; color: #999; margin-top: 1rem;'>
-        <strong>Disclaimer:</strong> Independent portfolio project demonstrating ML applications for wildlife management.<br>
-        Not affiliated with or endorsed by any government agency. Built for educational and professional demonstration purposes.
-    </p>
-</div>
-""", unsafe_allow_html=True)
+*Dashboard developed for wildlife management decision support | Data reflects stakeholder survey responses on wildlife value orientations, wolf tolerance, experiences, and agency trust*
+
+**Technical Note:** Replace synthetic data with actual dataset by updating the `load_data()` function with `pd.read_csv('your_data.csv')`
+""")
