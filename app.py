@@ -90,6 +90,27 @@ st.markdown(
     unsafe_allow_html=True
 )
 
+st.markdown("---")
+col1, col2, col3 = st.columns([1, 2, 1])
+with col2:
+    st.markdown("""
+    <div style='text-align: center; padding: 1rem; background: #e8f5e9; border-radius: 8px; border: 2px solid #1a472a;'>
+        <p style='margin: 0 0 0.5rem 0; color: #1a472a; font-weight: 600;'>
+            📓 See the Complete Technical Analysis
+        </p>
+        <a href='https://github.com/max-birdsong/wolf-tolerance-predictor/blob/main/Wolf_Tolerance_Classifier.ipynb' 
+           target='_blank' 
+           style='display: inline-block; padding: 0.5rem 1.5rem; background: #1a472a; color: white; 
+                  text-decoration: none; border-radius: 5px; font-weight: 600;'>
+            View Jupyter Notebook →
+        </a>
+        <p style='margin: 0.5rem 0 0 0; font-size: 0.85rem; color: #5a6c57;'>
+            EDA, feature engineering, ADASYN comparison, model evaluation
+        </p>
+    </div>
+    """, unsafe_allow_html=True)
+st.markdown("---")
+
 # Load model
 @st.cache_resource
 def load_model():
