@@ -90,7 +90,25 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-st.markdown("---")
+
+# Load model
+@st.cache_resource
+def load_model():
+    return joblib.load('wolf_tolerance_model.pkl')
+
+model = load_model()
+
+# Sidebar navigation with personal branding
+st.sidebar.markdown("### 🧭 Navigation")
+page = st.sidebar.radio(
+    "Select Tool:",
+    ["🎯 Individual Assessment", "📊 Batch Processing", "📈 Model Documentation"],
+    label_visibility="collapsed"
+)
+
+st.sidebar.markdown("---")
+
+
 col1, col2, col3 = st.columns([1, 2, 1])
 with col2:
     st.markdown("""
@@ -109,23 +127,6 @@ with col2:
         </p>
     </div>
     """, unsafe_allow_html=True)
-st.markdown("---")
-
-# Load model
-@st.cache_resource
-def load_model():
-    return joblib.load('wolf_tolerance_model.pkl')
-
-model = load_model()
-
-# Sidebar navigation with personal branding
-st.sidebar.markdown("### 🧭 Navigation")
-page = st.sidebar.radio(
-    "Select Tool:",
-    ["🎯 Individual Assessment", "📊 Batch Processing", "📈 Model Documentation"],
-    label_visibility="collapsed"
-)
-
 st.sidebar.markdown("---")
 
 # About the project
